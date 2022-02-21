@@ -53,29 +53,31 @@
   (hash-map :rows (take-nth 2 input)
             :links (keep-indexed #(if (odd? %1) %2) input)))
 
-(defn convert-row [row empty]
-  ())
 
-(defn convert-link [link])
+(defn make-new-line [placeholder length]
+  (let [nums (take length (range))
+        result {}]
+    (reduce #(assoc %1 %2 placeholder) result nums)))
 
 (defn represent [board words]
-  (let [s ""
-        rows (:rows board)
-        links (:links board)
-        line-map {0 "_ "
-                  1 "_ "
-                  2 "_ "
-                  3 "_ "
-                  4 "_ "}]
-    (map convert-row rows)
-    (map convert-link links)
-    ))
+  (let [rows-data (:rows board)
+        links-data (:links board)
+        line (make-new-line "_ " 5)]
+    (letfn [(make-line [l x y] (assoc l x (str y " ")))
+            (convert-row [row] (make-line line (first row) (second row)))
+            (convert-link [link] (make-line (make-line line (first link) "|") (second link) "|"))]
+      (println "test")
+      (let [rows (map #(convert-row %) rows-data)
+            links (map #(convert-link %) links-data)]
+        (map (fn [r l] ((apply #(println (second %)) r) (apply #(println (second %)) l))) rows links)))))
+
+
+
 
 (defn puzzle [input valid-words]
   (let [board (convert input)
         words {}]
     (represent board words)
-    (print board)
     ))
 
 (puzzle prototype word-set)
