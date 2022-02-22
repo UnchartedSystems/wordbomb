@@ -54,22 +54,20 @@
             :links (keep-indexed #(if (odd? %1) %2) input)))
 
 
-(defn make-new-line [placeholder length]
-  (let [nums (take length (range))
-        result {}]
-    (reduce #(assoc %1 %2 placeholder) result nums)))
-
 (defn represent [board words]
   (let [rows-data (:rows board)
-        links-data (:links board)
-        line (make-new-line "_ " 5)]
-    (letfn [(make-line [l x y] (assoc l x (str y " ")))
-            (convert-row [row] (make-line line (first row) (second row)))
-            (convert-link [link] (make-line (make-line line (first link) "|") (second link) "|"))]
-      (println "test")
+        links-data (:links board)]
+    (letfn [(new-line [def-str len] (reduce #(assoc %1 %2 def-str) {} (take len (range))))
+            (amend-line [l x y] (assoc l x (str y " ")))
+            (convert-row [row] (amend-line (new-line "_ " 5) (first row) (second row)))
+            (convert-link [link] (amend-line (amend-line (new-line "  " 5) (first link) "|") (second link) "|"))]
       (let [rows (map #(convert-row %) rows-data)
-            links (map #(convert-link %) links-data)]
-        (map (fn [r l] ((apply #(println (second %)) r) (apply #(println (second %)) l))) rows links)))))
+            links (map #(convert-link %) links-data)
+            destruct #(apply str (map second %))]
+        (map (fn [r l] (println (destruct r)) (println (destruct l))) rows links)
+        ))))
+
+;; MAP WON'T WORK: only limited to shortest collection.,
 
 
 
