@@ -53,6 +53,12 @@
   (hash-map :rows (take-nth 2 input)
             :links (keep-indexed #(if (odd? %1) %2) input)))
 
+ (defn interleave-vec [list1 list2]
+   (letfn [(iter [v l1 l2]
+             (cond (seq l1) (recur (conj v (first l1)) l2 (rest l1))
+                   (seq l2) (apply #(conj v %) l2)
+                   :else v))]
+     (iter [] list1 list2)))
 
 (defn represent [board words]
   (let [rows-data (:rows board)
@@ -63,12 +69,13 @@
             (convert-link [link] (amend-line (amend-line (new-line "  " 5) (first link) "|") (second link) "|"))]
       (let [rows (map #(convert-row %) rows-data)
             links (map #(convert-link %) links-data)
+            final-board (interleave-vec rows links)
             destruct #(apply str (map second %))]
-        (map (fn [r l] (println (destruct r)) (println (destruct l))) rows links)
+        (map #(println (destruct %)) final-board)
         ))))
 
 ;; MAP WON'T WORK: only limited to shortest collection.,
-
+;; Can simplify code with Interpose!?
 
 
 
