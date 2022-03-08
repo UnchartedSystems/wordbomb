@@ -1,88 +1,30 @@
 (ns main
   (:require [clojure.string :as string]))
 
-;; Use !*command* inputs to interact with the game
-;; eg: !2 = enter row 2. !clear = clears board. !quit = quit game.
-
-;; Game Representation _ _ _ _ P
-;;    |   |
-;; >> _ N _ _ _
-;;          | |
-;;    F _ _ _ _
-;;      | |
-;;    _ _ _ C _
-;;    |       |
-;;    _ _ A _ _
-
-;; Internal representation of submitted words:
-;; {:1 "sharP"
-;;  :2 "sNags"
-;;  :3 "Flogs"
-;;  :4 "cloCk"
-;;  :5 "crAnk"}
 
 (def word-set (set (string/split-lines (slurp "words.txt"))))
 
-(defn validate [input words]
-  (contains? words input))
-
-(defn toy-puzzle [words]
-  (println "Type a word to test the list")
-  (println (validate (string/lower-case (read-line)) words)))
-
-
-
-
-;; Use Puzzle Input for validation and representation, store word strings as game state.
-;; [[4 P] [0 2] [1 N] [3 4] [0 F] [1 2] [3 C] [0 4] [2 A]]
-
 (def prototype [[4 "P"] [0 2] [1 "N"] [3 4] [0 "F"] [1 2] [3 "C"] [0 4] [2 "A"]])
 
-;; Game Representation
-;;    _ _ _ _ P
-;;    |   |
-;; >> _ N _ _ _
-;;          | |
-;;    F _ _ _ _
-;;      | |
-;;    _ _ _ C _
-;;    |       |
-;;    _ _ A _ _
-
-(defn convert [input]
-  (hash-map :rows (take-nth 2 input)
-            :links (keep-indexed #(if (odd? %1) %2) input)))
-
- (defn interleave-vec [list1 list2]
-   (letfn [(iter [v l1 l2]
-             (cond (seq l1) (recur (conj v (first l1)) l2 (rest l1))
-                   (seq l2) (apply #(conj v %) l2)
-                   :else v))]
-     (iter [] list1 list2)))
-
-(defn represent [board words]
-  (let [rows-data (:rows board)
-        links-data (:links board)]
-    (letfn [(new-line [def-str len] (reduce #(assoc %1 %2 def-str) {} (take len (range))))
-            (amend-line [l x y] (assoc l x (str y " ")))
-            (convert-row [row] (amend-line (new-line "_ " 5) (first row) (second row)))
-            (convert-link [link] (amend-line (amend-line (new-line "  " 5) (first link) "|") (second link) "|"))]
-      (let [rows (map #(convert-row %) rows-data)
-            links (map #(convert-link %) links-data)
-            final-board (interleave-vec rows links)
-            destruct #(apply str (map second %))]
-        (map #(println (destruct %)) final-board)
-        ))))
-
-;; MAP WON'T WORK: only limited to shortest collection.,
-;; Can simplify code with Interpose!?
-
+(defn represent [input words word-len]
+  (letfn [(make-line [nil-char spec-char & pos]
+            (apply str (for [n (take word-len (range))] (if (some #(= n %) pos) spec-char nil-char))))
+          (transform [input]
+            (for [n (range (count input))
+                  :let [spec (get input n)
+                        even-line #(make-line "_" (second spec) (first spec))
+                        odd-line #(apply make-line " " "|" spec)]]
+              (or (get words (/ n 2)) (if (even? n) (even-line) (odd-line)))))
+          (monospace [board] (map #(apply str (interpose " " %)) board))]
+    (map println (monospace (transform input)))))
 
 
 (defn puzzle [input valid-words]
-  (let [board (convert input)
-        words {}]
-    (represent board words)
+  (let [words {}]
+    (represent input (assoc words 3 "TESTS") 5)
     ))
+
+;; (make-line " " "|" spec)
+;; (make-line "_" (second spec) (conj [] (first spec)))
 
 (puzzle prototype word-set)
