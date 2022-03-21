@@ -24,13 +24,19 @@
     (doseq [line (monospace (transform board))]
       (println line))))
 
-;; Returns a bool if word passes rules
+;; Validate has multiple steps
+;; - Check Input against Row
+;; - Create vector of columns
+;; - Process a Column to account for Links
+;; - Check Column Iteratively
+;; - Do this for all columns
 (defn validate [input pos board words]
-  (let [upper-row   (get board (- (* pos 2) 2))
-        upper-links (get board (- (* pos 2) 1))
-        upper-word  (get words (- pos 1))]
-    (and (not (and upper-links upper-row))
-         )))
+  (let [row (* pos 2)
+        input-char (str (get input (first (get board row))))
+        board-char (second (get board row))
+        row-check (= input-char board-char)]
+    row-check))
+
 
 (defn puzzle [board valid-words]
   (letfn [(start []
