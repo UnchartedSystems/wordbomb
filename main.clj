@@ -4,7 +4,7 @@
 
 (def word-set (set (map string/upper-case (string/split-lines (slurp "words.txt")))))
 
-(def prototype [[4 "P"] [0 2] [1 "N"] [3 4] [0 "F"] [1 2] [3 "C"] [0 4] [2 "A"]])
+(def prototype [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
 
 (def help "Placeholder Help Message")
 
@@ -30,17 +30,26 @@
 ;; - Process a Column to account for Links
 ;; - Check Column Iteratively
 ;; - Do this for all columns
-(defn validate [input pos board words]
-  (let [row (* pos 2)
-        input-char (str (get input (first (get board row))))
-        board-char (second (get board row))
-        row-check (= input-char board-char)]
-    row-check))
+
+(def debug #(do (println %) %))
+(defn validate [words board]
+  (letfn [(to-row [p] (* p 2))
+          (to-links [p] (- (* p 2) 1))
+          (word-matches-row? [word column letter] (= (get word column) letter))
+          (words-match-rows? [] (every? identity (map #(apply word-matches-row? (second %) (board (to-row (first %)))) words)))
+          (mk-column [c]
+            (reduce #(conj %1 (or (get (words %2) c)
+                                   (if (= c (first (board (to-row %2))))
+                                     (second (board (to-row %2)))
+                                     nil)))
+                    [] (range 5)))]     ;WATCH RANGE USED
+    (and (words-match-rows?)
+         (do (println (map mk-column (range 5))) true))))
 
 
 (defn puzzle [board valid-words]
   (letfn [(start []
-            (do (println "Welcome to WORDBOMB")
+            (do (println " Welcome to WORDBOMB")
                 (println "Type !help for the rules and controls")
                 (println)))
           (take-input [words pos]
@@ -55,7 +64,7 @@
                     (< 5 (count input)) (redo "Word Is Too Long")
                     (> 5 (count input)) (redo "Word Is Too Short")
                     (not (contains? word-set input)) (redo "Not In Word List")
-                    (not (validate input pos board words)) (redo "Word Violates Rules")
+                    (not (validate (assoc words pos input) board)) (redo "Word Violates Rules")
                     :else (iter (assoc words pos input) (+ pos 1)))))
           (iter [words pos]
             (represent board words pos)
