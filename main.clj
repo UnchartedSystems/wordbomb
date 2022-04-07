@@ -8,6 +8,10 @@
 
 (def help "Placeholder Help Message")
 
+;; Improvement Ideas:
+;; - Should show resulting vertically adjacent linked letters in lowercase
+;; - Show something special or satisfying on victory?
+
 (defn represent [board words pos]
   (letfn [(monospace [board]
             (map #(apply str (interpose " " %)) board))
@@ -46,6 +50,7 @@
     (and (words-match-rows?)
          (do (println (map mk-column (range 5))) true))))
 
+(+ 2 2)
 
 (defn puzzle [board valid-words]
   (letfn [(start []
@@ -54,7 +59,8 @@
                 (println)))
           (take-input [words pos]
             (let [input (string/upper-case (read-line))
-                  redo #(do (println %) (take-input words pos))]
+                  redo #(do (println %) (take-input words pos))
+                  all-words (/ (+ (count board) 1) 2)]
               (cond (= input "!HELP") (redo help)
                     (= input "!EXIT") "Game Over"
                     (= input "!RESET") (iter {} 0)
@@ -65,6 +71,7 @@
                     (> 5 (count input)) (redo "Word Is Too Short")
                     (not (contains? word-set input)) (redo "Not In Word List")
                     (not (validate (assoc words pos input) board)) (redo "Word Violates Rules")
+                    (= (count (assoc words pos input)) all-words) (do (represent board (assoc words pos input) pos) (println "YOU WIN"))
                     :else (iter (assoc words pos input) (+ pos 1)))))
           (iter [words pos]
             (represent board words pos)
