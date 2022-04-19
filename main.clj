@@ -54,8 +54,7 @@
                                         (not (nil? (some #(= c %) (board r)))))))
                     [] (range 9)))]     ;WATCH RANGE USED
     (and (words-match-rows?)
-         (do (println (map mk-column (range 5))) true)
-         ())))
+         (do (println (map mk-column (range 5))) true))))
 
 (defn puzzle [board valid-words]
   (letfn [(take-input [words pos]
