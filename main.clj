@@ -24,7 +24,6 @@
                         odd  (apply vector " " "|" spec)]]
               (str (if (= l (* 2 pos)) ">> " "   ")
                    (or (get words (/ l 2)) (apply make-line l (if (even? l) even odd))))))]
-    (println)
     (doseq [line (monospace (transform board))]
       (println line))))
 
@@ -35,8 +34,7 @@
 ;; - Check Column Iteratively
 ;; - Do this for all columns
 
-(def debug #(do (println %) %))
-(defn validate [words board]
+(defn- validate [words board]
   (letfn [(to-row [p] (* p 2))
           (to-links [p] (- (* p 2) 1))
           (word-matches-row? [word column letter] (= (get word column) letter))
@@ -48,35 +46,35 @@
                                      nil)))
                     [] (range 5)))]     ;WATCH RANGE USED
     (and (words-match-rows?)
-         (do (println (map mk-column (range 5))) true))))
+         (do (println (map mk-column (range 5))) true)
+         ())))
 
-(+ 2 2)
 
 (defn puzzle [board valid-words]
-  (letfn [(start []
-            (do (println " Welcome to WORDBOMB")
-                (println "Type !help for the rules and controls")
-                (println)))
-          (take-input [words pos]
+  (letfn [(take-input [words pos]
             (let [input (string/upper-case (read-line))
                   redo #(do (println %) (take-input words pos))
                   all-words (/ (+ (count board) 1) 2)]
-              (cond (= input "!HELP") (redo help)
-                    (= input "!EXIT") "Game Over"
-                    (= input "!RESET") (iter {} 0)
-                    (= input "!CLEAR") (iter (dissoc words pos) pos)
-                    (number? (read-string input )) (iter words (read-string input))
-                    (= \! (get input 0)) (redo "Invalid Command")
-                    (< 5 (count input)) (redo "Word Is Too Long")
-                    (> 5 (count input)) (redo "Word Is Too Short")
-                    (not (contains? word-set input)) (redo "Not In Word List")
-                    (not (validate (assoc words pos input) board)) (redo "Word Violates Rules")
-                    (= (count (assoc words pos input)) all-words) (do (represent board (assoc words pos input) pos) (println "YOU WIN"))
-                    :else (iter (assoc words pos input) (+ pos 1)))))
+              (cond
+                ;; Commands
+                (= input "!HELP") (redo help)
+                (= input "!EXIT") "Game Over"
+                (= input "!RESET") (iter {} 0)
+                (= input "!CLEAR") (iter (dissoc words pos) pos)
+                (number? (read-string input )) (iter words (read-string input))
+                (= \! (get input 0)) (redo "Invalid Command")
+                ;; Errors
+                (< 5 (count input)) (redo "Word Is Too Long")
+                (> 5 (count input)) (redo "Word Is Too Short")
+                (not (contains? word-set input)) (redo "Not In Word List")
+                ;; Validation
+                (not (validate (assoc words pos input) board)) (redo "Word Violates Rules")
+                (= (count (assoc words pos input)) all-words) (do (represent board (assoc words pos input) pos) (println "YOU WIN"))
+                :else (iter (assoc words pos input) (+ pos 1)))))
           (iter [words pos]
             (represent board words pos)
             (take-input words pos))]
-    (do (start)
+    (do (println "\nWelcome to WORDBOMB\nType !help for the rules and controls\n")
         (iter {} 0))))
 
 
