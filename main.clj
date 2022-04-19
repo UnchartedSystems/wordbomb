@@ -8,6 +8,8 @@
 
 (def help "Placeholder Help Message")
 
+(some #(= 3 %) (prototype 7))
+
 ;; Improvement Ideas:
 ;; - Should show resulting vertically adjacent linked letters in lowercase
 ;; - Show something special or satisfying on victory?
@@ -30,25 +32,30 @@
 ;; Validate has multiple steps
 ;; - Check Input against Row
 ;; - Create vector of columns
-;; - Process a Column to account for Links
+
+;; - Process a Column to account for Links:
+;; - If link is true:
+;; - Check if row1 has diff char then row2 : false
+;; - check it row 1 has no char: row1 char = row2 char
+;; - else: true
+
 ;; - Check Column Iteratively
 ;; - Do this for all columns
 
+(defn debug [thing] (do (println thing) thing))
 (defn- validate [words board]
   (letfn [(to-row [p] (* p 2))
-          (to-links [p] (- (* p 2) 1))
+          (to-link [p] (- (* p 2) 1))
           (word-matches-row? [word column letter] (= (get word column) letter))
           (words-match-rows? [] (every? identity (map #(apply word-matches-row? (second %) (board (to-row (first %)))) words)))
           (mk-column [c]
-            (reduce #(conj %1 (or (get (words %2) c)
-                                   (if (= c (first (board (to-row %2))))
-                                     (second (board (to-row %2)))
-                                     nil)))
-                    [] (range 5)))]     ;WATCH RANGE USED
+            (reduce (fn [v r] (conj v (if (even? r)
+                                        (or (get (words (/ r 2)) c) (if (= c (first (board r))) (second (board r)) nil))
+                                        (not (nil? (some #(= c %) (board r)))))))
+                    [] (range 9)))]     ;WATCH RANGE USED
     (and (words-match-rows?)
          (do (println (map mk-column (range 5))) true)
          ())))
-
 
 (defn puzzle [board valid-words]
   (letfn [(take-input [words pos]
