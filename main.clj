@@ -70,7 +70,7 @@
                 (number? (read-string input )) (iter words (read-string input))
                 (= \! (get input 0)) (redo "Invalid Command")
                 ;; Errors
-                (< 5 (count input)) (redo "Word Is Too Long")
+                (< 5 (count input)) (redo "Word Is TooLong")
                 (> 5 (count input)) (redo "Word Is Too Short")
                 (not (contains? word-set input)) (redo "Not In Word List")
                 ;; Validation
@@ -85,3 +85,26 @@
 
 
 (puzzle prototype word-set)
+
+
+
+(def input-data [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
+
+;; Convert input-data into 2 representations of the board (a 2d vector of rows)
+;; - a row-outline: vector of the row vectors
+;; - a represention: for now a tranformation of the base representation into a full rep
+;; - A link-outline: vector of the link vectors
+;;
+;; Gameloop
+;; - print the full representation
+;; - take user input
+;; - validate new representation
+;; - if error: print feedback, start loop with last representation
+;; - if good:
+;; - check for win
+;; - if no, start loop again
+;; - if yes, print congratz and exit game
+;;
+;; Validation
+;; - Check rows of representation against row-outline
+;; - check pairs of rows of representation against link-outline
