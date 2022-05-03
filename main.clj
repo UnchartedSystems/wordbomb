@@ -2,94 +2,6 @@
   (:require [clojure.string :as string]))
 
 
-(def word-set (set (map string/upper-case (string/split-lines (slurp "words.txt")))))
-
-(def prototype [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
-
-(def help "Placeholder Help Message")
-
-(some #(= 3 %) (prototype 7))
-
-;; Improvement Ideas:
-;; - Should show resulting vertically adjacent linked letters in lowercase
-;; - Show something special or satisfying on victory?
-
-(defn represent [board words pos]
-  (letfn [(monospace [board]
-            (map #(apply str (interpose " " %)) board))
-          (make-line [l default char & spec]
-            (apply str (for [c (take 5 (range))] (if (some #(= c %) spec) char default))))
-          (transform [board]
-            (for [l (range (count board))
-                  :let [spec (get board l)
-                        even (apply vector "_" (reverse spec))
-                        odd  (apply vector " " "|" spec)]]
-              (str (if (= l (* 2 pos)) ">> " "   ")
-                   (or (get words (/ l 2)) (apply make-line l (if (even? l) even odd))))))]
-    (doseq [line (monospace (transform board))]
-      (println line))))
-
-;; Validate has multiple steps
-;; - Check Input against Row
-;; - Create vector of columns
-
-;; - Process a Column to account for Links:
-;; - If link is true:
-;; - Check if row1 has diff char then row2 : false
-;; - check it row 1 has no char: row1 char = row2 char
-;; - else: true
-
-;; - Check Column Iteratively
-;; - Do this for all columns
-
-(defn debug [thing] (do (println thing) thing))
-(defn- validate [words board]
-  (letfn [(to-row [p] (* p 2))
-          (to-link [p] (- (* p 2) 1))
-          (word-matches-row? [word column letter] (= (get word column) letter))
-          (words-match-rows? [] (every? identity (map #(apply word-matches-row? (second %) (board (to-row (first %)))) words)))
-          (mk-column [c]
-            (reduce (fn [v r] (conj v (if (even? r)
-                                        (or (get (words (/ r 2)) c) (if (= c (first (board r))) (second (board r)) nil))
-                                        (not (nil? (some #(= c %) (board r)))))))
-                    [] (range 9)))]     ;WATCH RANGE USED
-    (and (words-match-rows?)
-         (do (println (map mk-column (range 5))) true))))
-
-(defn puzzle [board valid-words]
-  (letfn [(take-input [words pos]
-            (let [input (string/upper-case (read-line))
-                  redo #(do (println %) (take-input words pos))
-                  all-words (/ (+ (count board) 1) 2)]
-              (cond
-                ;; Commands
-                (= input "!HELP") (redo help)
-                (= input "!EXIT") "Game Over"
-                (= input "!RESET") (iter {} 0)
-                (= input "!CLEAR") (iter (dissoc words pos) pos)
-                (number? (read-string input )) (iter words (read-string input))
-                (= \! (get input 0)) (redo "Invalid Command")
-                ;; Errors
-                (< 5 (count input)) (redo "Word Is TooLong")
-                (> 5 (count input)) (redo "Word Is Too Short")
-                (not (contains? word-set input)) (redo "Not In Word List")
-                ;; Validation
-                (not (validate (assoc words pos input) board)) (redo "Word Violates Rules")
-                (= (count (assoc words pos input)) all-words) (do (represent board (assoc words pos input) pos) (println "YOU WIN"))
-                :else (iter (assoc words pos input) (+ pos 1)))))
-          (iter [words pos]
-            (represent board words pos)
-            (take-input words pos))]
-    (do (println "\nWelcome to WORDBOMB\nType !help for the rules and controls\n")
-        (iter {} 0))))
-
-
-(puzzle prototype word-set)
-
-
-
-(def input-data [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
-
 ;; Convert input-data into 2 representations of the board (a 2d vector of rows)
 ;; - a row-outline: vector of the row vectors
 ;; - a represention: for now a tranformation of the base representation into a full rep
@@ -108,3 +20,55 @@
 ;; Validation
 ;; - Check rows of representation against row-outline
 ;; - check pairs of rows of representation against link-outline
+
+(def word-set (set (map string/upper-case (string/split-lines (slurp "words.txt")))))
+
+(def puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
+
+(defn- represent [default words links pos]
+  (let [full-words (map #(or (words %) (default %)) (range (count default)))
+        links-full (map (fn [l-row] (reduce #(assoc %1 %2 "|") (vec (repeat 5 " ")) l-row)) links)
+        words-full (map (fn [w-row] (map #(if (not %) "_" %) w-row)) full-words)
+        links-str (map #(reduce str %) links-full)
+        words-str (map #(reduce str %) words-full)
+        representation (cons (first words-str) (interleave links-str (rest words-str)))
+        position #(if (= (* pos 2) %) ">>" "  ")]
+    (println "")
+    (mapv #(apply println (position %2) %1) representation (range (count representation)))))
+
+
+(defn- validate [letters links words input-row input-str pos]
+  (let [new-words (assoc words pos input-row)
+        word #(get new-words %)]
+    (and (contains? word-set input-str)
+         (= (input-row (first (letters pos))) (second (letters pos)))
+         (reduce (fn [b i] (if (not (and (word i) (word (inc i)))) b
+                               (reduce #(and %1 %2) b (map #(= (= %1 %2) (not (apply distinct? %3 (links i))))
+                                                           (word i)
+                                                           (word (inc i))
+                                                           (range)))))
+                 true (range (count links))))))
+
+
+(defn- game-loop [letters links default words pos show?]
+  (if show? (represent default words links pos))
+  (let [input-str (string/upper-case (read-line))
+        input-row (vec (char-array input-str))
+        iter  (partial game-loop letters links default)]
+    (cond
+      (= input-str "!EXIT")  "Game Over"
+      (= input-str "!RESET")  (iter {} 0 true)
+      (= input-str "!CLEAR")  (iter (dissoc words pos) pos true)
+      (number? (read-string input-str))  (iter words (dec (read-string input-str)) true)
+      (not (validate letters links words input-row input-str pos))  (do (println "Word Violates Rules") (iter words pos false))
+      (= (count (assoc words pos input-row)) (count default))  (do (represent default (assoc words pos input-row) links pos) (println "YOU WIN"))
+      :else (iter (assoc words pos input-row )  (+ pos 1) true))))
+
+
+(defn- initialize [input-puzzle]
+  (let [letters (vec (take-nth 2 input-puzzle))
+        links (vec (take-nth 2 (rest input-puzzle)))
+        default (vec (map #(assoc (vec (repeat 5 false)) (first %) (second %)) letters))]
+    (game-loop letters links default {} 0 true)))
+
+(initialize puzzle)
