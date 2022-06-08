@@ -1,7 +1,6 @@
 (ns main
   (:require [clojure.string :as string]))
 
-
 ;; Convert input-data into 2 representations of the board (a 2d vector of rows)
 ;; - a row-outline: vector of the row vectors
 ;; - a represention: for now a tranformation of the base representation into a full rep
@@ -51,7 +50,7 @@
 
 
 (defn- game-loop [letters links default words pos show?]
-  (if show? (represent default words links pos))
+  (if show? (represent default words links pos) nil)
   (let [input-str (string/upper-case (read-line))
         input-row (vec (char-array input-str))
         iter  (partial game-loop letters links default)]
