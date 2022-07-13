@@ -17,7 +17,7 @@
   (assert (string? word) "wrong type: 'word' is not string")
   (letfn [(linked? [i] (if (some #(= % i) row-links) = not=))
           (letters-valid? [new-word] (mapv #((linked? %) (get word %) (get new-word %)) (range 5)))
-          (word-valid? [word] (apply = (letters-valid? word)))]
+          (word-valid? [word] (apply = true (letters-valid? word)))]
     (filter word-valid? row-set)))
 
 (defn- filter-row-by-row [last-row next-row row-links]
@@ -62,4 +62,4 @@
     (get test-sets 3) (get test-links 2))
    (get test-sets 4) (get test-links 3)))
 
-(count (flatten (solve puzzle)))
+(count (set (flatten (solve puzzle))))
