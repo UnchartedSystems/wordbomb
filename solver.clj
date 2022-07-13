@@ -1,4 +1,4 @@
-(ns solver
+(ns valid-rowsr
   (:require [clojure.string :as string]))
 
 ;; NOTE: a function to filter end results to solutions that only use curated words would be very useful
@@ -16,22 +16,16 @@
           (word-valid? [word] (apply = true (letters-valid? word)))]
     (filter word-valid? row-set)))
 
-(filter-row-by-word "CLACK" ["PLACE"] [0 4])
+(defn- valid-row [this-row next-row row-links]
+  (let [valid-wordset (fn [w] (filter-row-by-word w next-row row-links))
+        filter-empties #(if (empty? %3) %1 (assoc %1 %2 %3))]
+    (reduce #(filter-empties %1 %2 (valid-wordset %2)) {} this-row)))
 
-;; TODO: function is poorly named, rename
-;; TODO: Lots of names here are bad, come back and improve them. ('mapped-rows?', 'filter-entries')
-(defn- convert-row [this-row next-row row-links]
-  (let [linked-words (fn [w] (filter-row-by-word w next-row row-links))
-        filter-entries #(if (empty? %3) %1 (assoc %1 %2 %3))
-        mapped-rows (reduce #(filter-entries %1 %2 (linked-words %2)) {} this-row)]
-    mapped-rows))
-
-;; TODO: function is poorly named, rename
-(defn- solve [puzzle word-set]
+(defn- valid-rows [puzzle word-set]
   (let [letters (vec (take-nth 2 puzzle))
         links   (vec (take-nth 2 (rest puzzle)))
         row-sets (mapv (fn [[n l]] (filter #(= (get % n) l) word-set)) letters)]
-    (map convert-row row-sets (rest row-sets) links)))
+    (map valid-row row-sets (rest row-sets) links)))
 
 ;; HACK: builds stack frames via mapped recursion
 (defn- solution-search
@@ -39,23 +33,22 @@
    (if (empty? rows-left)
      (conj prev-words word)
      (let [next-words (get (first rows-left) word)]
-       (if (empty? next-words)
-         false
-         (map #(solution-search % (rest rows-left) (conj prev-words word)) next-words)))))
+       (map #(solution-search % (rest rows-left) (conj prev-words word)) next-words))))
   ([rows]
    (map #(solution-search (key %) rows []) (first rows))))
 
 ;; HACK: downstream of stack recursion hack
 (defn- cleanup [solutions]
   (let [len (count (vec (take-nth 2 puzzle)))]
-    (partition len (filter boolean (flatten solutions)))))
+    (partition len (flatten solutions))))
 
-;; Used for triple checking core words solution count
+;; Used for triple checking core solution count from all solutions
 (defn- filter-core [solutions]
   (let [core-word? (fn [w] (some #(= w %) core-words))
         core-solution? (fn [s] (apply = true (map core-word? s)))]
     (filter core-solution? solutions)))
 
-#_(count (cleanup (solution-search (solve puzzle all-words))))
-#_(count (filter-core (cleanup (solution-search (solve puzzle all-words)))))
-#_(count (cleanup (solution-search (solve puzzle core-words))))
+#_(cleanup (solution-search (valid-rows puzzle all-words)))
+#_(count (filter-core (cleanup (solution-search (valid-rows puzzle all-words)))))
+(cleanup (solution-search (valid-rows puzzle core-words)))
+#_(valid-rows puzzle all-words)

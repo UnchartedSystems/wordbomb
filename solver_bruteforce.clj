@@ -36,7 +36,7 @@
             (rest links-left))))
   ([row-sets links]
    (hub (filter-row-by-row (first row-sets) (second row-sets) (first links))
-        (rest (rest row-sets))                 ; THIS WAS THE BUG AURGGHGHGHGHGHGHGHG
+        (rest (rest row-sets))          ; THIS WAS THE BUG AURGGHGHGHGHGHGHGHG
         (rest links))))
 
 ;;;; Major structural flaw
@@ -62,4 +62,5 @@
     (get test-sets 3) (get test-links 2))
    (get test-sets 4) (get test-links 3)))
 
-(count (set (flatten (solve puzzle))))
+#_(count (set (flatten (solve puzzle))))
+(count (solve puzzle))
