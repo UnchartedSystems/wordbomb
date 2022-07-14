@@ -3,9 +3,9 @@
 
 ;; NOTE: A fitness function that values curated words more then all words would be useful
 
+;; TODO: move from each ns to a utilities ns.
 (def all-words (set (map string/upper-case (string/split-lines (slurp "words-all.txt")))))
 (def core-words (set (map string/upper-case (string/split-lines (slurp "words-core.txt")))))
-
 (def test-puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \O] [1 3] [4 \R]])
 
 (defn- filter-row-by-word [word row-set row-links]
