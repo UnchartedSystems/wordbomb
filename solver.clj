@@ -3,6 +3,13 @@
 
 ;; NOTE: A fitness function that values curated words more then all words would be useful
 
+;; NOTE TODO: Add multitasking support!
+;; TODO: For creating row-sets!
+;; TODO: For creating valid-rows
+;; TODO: For rewriting Solution Search
+
+;; HACK REVIEW TODO: Rewrite Solution Search to not blow the stack and allow concurrency
+
 ;; TODO: move from each ns to a utilities ns.
 (def all-words (set (map string/upper-case (string/split-lines (slurp "words-all.txt")))))
 (def core-words (set (map string/upper-case (string/split-lines (slurp "words-core.txt")))))

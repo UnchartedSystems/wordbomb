@@ -16,8 +16,8 @@
 
 ;; ---
 
-;; NOTE: alphabet char range
-#_(not-any? #(= \N %)  [\N \F \P])
+;; NOTE: alphabet char range, note range end is exclusive
+#_(map char (range 65 91))
 
 ;; HACK TODO: Just made repeating vector maker to see if helper functions work
 ;; need to be reworked to incorporate previous numbers to be banned
