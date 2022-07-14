@@ -1,13 +1,12 @@
-(ns valid-rowsr
+(ns solver
   (:require [clojure.string :as string]))
 
-;; NOTE: a function to filter end results to solutions that only use curated words would be very useful
-;; NOTE: alternatively a fitness function that values curated words more
+;; NOTE: A fitness function that values curated words more then all words would be useful
 
 (def all-words (set (map string/upper-case (string/split-lines (slurp "words-all.txt")))))
 (def core-words (set (map string/upper-case (string/split-lines (slurp "words-core.txt")))))
 
-(def puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
+(def test-puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \O] [1 3] [4 \R]])
 
 (defn- filter-row-by-word [word row-set row-links]
   (assert (string? word) "wrong type: 'word' is not string")
@@ -38,7 +37,7 @@
    (map #(solution-search (key %) rows []) (first rows))))
 
 ;; HACK: downstream of stack recursion hack
-(defn- cleanup [solutions]
+(defn- cleanup [puzzle solutions]
   (let [len (count (vec (take-nth 2 puzzle)))]
     (partition len (flatten solutions))))
 
@@ -48,7 +47,10 @@
         core-solution? (fn [s] (apply = true (map core-word? s)))]
     (filter core-solution? solutions)))
 
-#_(cleanup (solution-search (valid-rows puzzle all-words)))
-#_(count (filter-core (cleanup (solution-search (valid-rows puzzle all-words)))))
-(cleanup (solution-search (valid-rows puzzle core-words)))
-#_(valid-rows puzzle all-words)
+(defn core-solutions [puzzle]
+  (cleanup puzzle (solution-search (valid-rows puzzle core-words))))
+
+#_(cleanup (solution-search (valid-rows test-puzzle all-words)))
+#_(count (filter-core (cleanup (solution-search (valid-rows test-puzzle all-words)))))
+(cleanup test-puzzle (solution-search (valid-rows test-puzzle core-words)))
+#_(valid-rows test-puzzle all-words)
