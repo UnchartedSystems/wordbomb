@@ -35,23 +35,26 @@
   (let [make-new   (fn [v f] (first (filter (fn [i] (not-any? #(= i %) v)) (repeatedly f))))
         new-letter (fn [v] (make-new v #(char (+ 65 (rand-int 25)))))
         new-number (fn [v] (make-new v #(rand-int 5))) ;Not efficient, but also not hotloop
-        letter-pairs  (split-pairs (vec (interleave (cycle (take 5 (distinct (repeatedly #(new-number [])))))
-                                                    (take len (distinct (repeatedly #(new-letter [])))))))
-        #_letter-pos #_(map (fn [i] (vector (first (get letter-pairs i)) (first (get letter-pairs (inc i))))) (range (dec len)))
-        #_links      #_(fn [l p] (if (empty? p) l (recur (conj l (vec (take 2 (distinct (repeatedly #(new-number (apply conj (debug (first p)) (debug (last l))))))))) (rest p))))]
-    (links [] letter-pos)
 
+        letter-nums (take len (cycle (take 5 (distinct (repeatedly #(new-number []))))))
 
-    #_(split-pairs (vec (take 8 (interleave (dedupe (repeatedly #(new-number [])))
-                                            (dedupe (repeatedly #(new-number [])))))))
+        new-links (fn [prev-links] (vec (take 2 (distinct (repeatedly #(new-number prev-links))))))
+        all-links #((fn [c links] (if (< c 1 ) links (recur (dec c) (conj links (new-links (if (empty? links) [] (last links))))))) len [])
+        row-nums (take len (cycle (take 5 (distinct (repeatedly #(new-number []))))))
 
-    #_(vec (repeatedly len #(vector (new-number []) (new-letter [])))) ; HACK
+        dist-nums ((fn [] (take len (cycle (take 5 (distinct (repeatedly #(new-number []))))))))]
 
-    #_(loop [c len
-             puzzle []
-             letters []
-             letter-nums []
-             last-nums []]
+    (map  (fn [i] (vec (take 2 (distinct (repeatedly #(new-number [(nth letter-nums i) (nth letter-nums (inc i))])))))) (range (dec len)))
+
+    ;; (println letter-nums)
+    ;; (println (nth letter-nums 1))
+    ;; (println (nth letter-nums 2))
+
+    ;; (take 10 (repeatedly #(new-number [1 2])))
+
+    #_(all-links)
+
+    #_(loop [c len, puzzle [], letters [], letter-nums [], last-nums []]
         (if (< c 1)
           puzzle
           (recur ())))
@@ -59,3 +62,19 @@
 
 (generator 5)
 
+
+;; NOTE REVIEW TODO: All generated puzzles should have these properties
+;; No link can connect a set letter
+;; each link set, and each letter, should be maximally distinct.
+;; For letter, that means the first 5 are always distinct
+;; For link sets, it means new links should tend towards spots with the lowest frequencies
+
+;; _ _ L _ _
+;; o x o o x
+;; _ _ _ L _
+;; x o x o o
+;; _ _ _ _ L
+;; o x o x o
+;; L _ _ _ _
+;; o o x o x
+;; _ L _ _ _
