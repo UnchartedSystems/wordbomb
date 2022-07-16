@@ -78,3 +78,26 @@
 ;; L _ _ _ _
 ;; o o x o x
 ;; _ L _ _ _
+
+;; NOTE: Get all subsets of links
+;; It's just sum of 4 + 3 + 2 + 1
+(def link-subsets
+  (loop [outer-pos (take 4 (range 5))
+         inner-pos (drop 1 (range 5))
+         out []]
+    (if (empty? outer-pos) out
+        (recur (rest outer-pos)
+               (rest inner-pos)
+               (loop [i-pos inner-pos
+                      o out]
+                 (if (empty? i-pos)
+                   o
+                   (recur (rest i-pos)
+                          (conj o [(first outer-pos) (first i-pos)]))))))))
+
+link-subsets
+
+;; NOTE Based on letter positions, find rows iteratively that satisfies constraints while equalizing frequency disparity
+;; NOTE Letters always match links 2 rows above.
+;; This is because if the letter were in an independent position there would be 4 constraints on 5 spaces for a 2 link row, impossible
+;; TODO REVIEW: Think about how to do this algorithmically
