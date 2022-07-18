@@ -1,21 +1,9 @@
 (ns generator
   (:require [clojure.string :as str]
-            [solver :as solver]))
+            [solver :as solver]
+            [utilities :as utils]))
 
 
-(def test-puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \O]])
-(def string-puzzle "4P021N340F123C042O")
-
-(defn- split-pairs [seq]
-  (loop [i seq, o []] (if (empty? i) o (recur (subvec i 2) (conj o (subvec i 0 2))))))
-
-(defn- puzzle-str-to-vec [s]
-  (let [parse #(if (int? (read-string %)) (read-string %) (get % 0))
-        split-pairs #(loop [i %, o []]
-                       (if (empty? i) o (recur (subvec i 2) (conj o (subvec i 0 2)))))]
-    (split-pairs (mapv parse (str/split s #"")))))
-
-(defn- puzzle-vec-to-str [v] (apply str (flatten v)))
 
 ;; ---
 
@@ -101,3 +89,5 @@ link-subsets
 ;; NOTE Letters always match links 2 rows above.
 ;; This is because if the letter were in an independent position there would be 4 constraints on 5 spaces for a 2 link row, impossible
 ;; TODO REVIEW: Think about how to do this algorithmically
+
+

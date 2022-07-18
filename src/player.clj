@@ -1,5 +1,6 @@
-(ns main
-  (:require [clojure.string :as string]))
+(ns player
+  (:require [utilities :as utils]
+            [clojure.string :as str]))
 
 ;; Convert input-data into 2 representations of the board (a 2d vector of rows)
 ;; - a row-outline: vector of the row vectors
@@ -20,9 +21,6 @@
 ;; - Check rows of representation against row-outline
 ;; - check pairs of rows of representation against link-outline
 
-(def word-set (set (map string/upper-case (string/split-lines (slurp "words.txt")))))
-
-(def puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
 
 (defn- represent [default words links pos]
   (let [full-words (map #(or (words %) (default %)) (range (count default)))
@@ -39,7 +37,7 @@
 (defn- validate [letters links words input-row input-str pos]
   (let [new-words (assoc words pos input-row)
         word #(get new-words %)]
-    (and (contains? word-set input-str)
+    (and (contains? utils/all-words input-str)
          (= (input-row (first (letters pos))) (second (letters pos)))
          (reduce (fn [b i] (if (not (and (word i) (word (inc i)))) b
                                (reduce #(and %1 %2) b (map #(= (= %1 %2) (not (apply distinct? %3 (links i))))
@@ -51,7 +49,7 @@
 
 (defn- game-loop [letters links default words pos show?]
   (if show? (represent default words links pos) nil)
-  (let [input-str (string/upper-case (read-line))
+  (let [input-str (str/upper-case (read-line))
         input-row (vec (char-array input-str))
         iter  (partial game-loop letters links default)]
     (cond
@@ -70,4 +68,4 @@
         default (vec (map #(assoc (vec (repeat 5 false)) (first %) (second %)) letters))]
     (game-loop letters links default {} 0 true)))
 
-(initialize puzzle)
+(initialize utils/test-puzzle)

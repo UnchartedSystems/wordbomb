@@ -1,19 +1,13 @@
 (ns solver
-  (:require [clojure.string :as string]))
+  (:require [utilities :as utils]))
 
 ;; NOTE: A fitness function that values curated words more then all words would be useful
-
+;; HACK REVIEW TODO: Rewrite Solution Search to not blow the stack and allow concurrency
 ;; NOTE TODO: Add multitasking support!
 ;; TODO: For creating row-sets!
 ;; TODO: For creating valid-rows
 ;; TODO: For rewriting Solution Search
 
-;; HACK REVIEW TODO: Rewrite Solution Search to not blow the stack and allow concurrency
-
-;; TODO: move from each ns to a utilities ns.
-(def all-words (set (map string/upper-case (string/split-lines (slurp "words-all.txt")))))
-(def core-words (set (map string/upper-case (string/split-lines (slurp "words-core.txt")))))
-(def test-puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \O] [1 3] [4 \R]])
 
 (defn- filter-row-by-word [word row-set row-links]
   (assert (string? word) "wrong type: 'word' is not string")
@@ -50,14 +44,16 @@
 
 ;; Used for triple checking core solution count from all solutions
 (defn- filter-core [solutions]
-  (let [core-word? (fn [w] (some #(= w %) core-words))
+  (let [core-word? (fn [w] (some #(= w %) utils/core-words))
         core-solution? (fn [s] (apply = true (map core-word? s)))]
     (filter core-solution? solutions)))
 
 (defn core-solutions [puzzle]
-  (cleanup puzzle (solution-search (valid-rows puzzle core-words))))
+  (cleanup puzzle (solution-search (valid-rows puzzle utils/core-words))))
 
 #_(cleanup (solution-search (valid-rows test-puzzle all-words)))
 #_(count (filter-core (cleanup (solution-search (valid-rows test-puzzle all-words)))))
-(cleanup test-puzzle (solution-search (valid-rows test-puzzle core-words)))
+(cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
 #_(valid-rows test-puzzle all-words)
+
+(+ 1 1)
