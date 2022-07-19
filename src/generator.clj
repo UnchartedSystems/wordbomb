@@ -82,5 +82,8 @@ link-subsets
 
 ;; TODO: Find better name!
 ;; TODO: Write valid subset for 3 triples as specified in remarkable notes
+;; NOTE FIXME TODO: WAIT! Consider [0 1 2] [1 2 3] [1 2 4]! Valid subsets, but remarkable method doesn't apply!a
+;; NOTE: If contains? returns same num for both pairs, then every subset that uses that num is valid
+;; f([1 2 3] [0 1 2]) = 3, f([1 2 3] [1 2 4]) = 3, therefore [1 3], [2 3] both valid.
 (defn- valid-3-subsets [x y z]
   ())
