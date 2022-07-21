@@ -85,5 +85,14 @@ link-subsets
 ;; NOTE FIXME TODO: WAIT! Consider [0 1 2] [1 2 3] [1 2 4]! Valid subsets, but remarkable method doesn't apply!a
 ;; NOTE: If contains? returns same num for both pairs, then every subset that uses that num is valid
 ;; f([1 2 3] [0 1 2]) = 3, f([1 2 3] [1 2 4]) = 3, therefore [1 3], [2 3] both valid.
-(defn- valid-3-subsets [x y z]
-  ())
+
+;; Assume 3 subsets, not 2
+;; TODO: rename everything
+(defn- comp-2-subsets [x y]
+  (filter (fn [num] (not (some #(= num %) y))) x))
+
+;; TODO: rename everything
+(defn- valid-3-subsets [last this next]
+  (list (comp-2-subsets this last) (comp-2-subsets this next)))
+
+(valid-3-subsets [0 1 3] [0 2 3] [0 2 4])

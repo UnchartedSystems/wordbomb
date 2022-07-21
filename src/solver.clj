@@ -56,4 +56,3 @@
 (cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
 #_(valid-rows test-puzzle all-words)
 
-(+ 1 1)
