@@ -39,14 +39,13 @@
 
 
 
-(defn- filter-unique [links filter-against]
+(defn- filter-adjacency [links filter-against]
   (filter (fn [num] (not (some #(= num %) filter-against))) links))
 
 ;; TODO: rename everything
 (defn- filter-adjacencies [prev this next]
-  (list (filter-unique this prev) (filter-unique this next)))
+  (list (filter-adjacency this prev) (filter-adjacency this next)))
 
-(filter-adjacencies [0 1 3] [0 2 3] [0 2 4])
 
 ;; TODO: rename input
 (defn- link-subsets [input]
@@ -63,3 +62,29 @@
                    (recur (rest i-pos)
                           (conj o [(first outer-pos) (first i-pos)]))))))))
 
+
+(defn- valid-columns [prev next]
+  (filterv #(not (or (= % prev) (= % next))) (range 5)))
+
+(defn- get-possible-links [letters]
+  (mapv valid-columns letters (rest letters)))
+
+
+(def test-letters (take 5 (distinct (repeatedly new-column))))
+
+(def test-linksets (get-possible-links test-letters))
+
+test-linksets
+(mapv distinct
+      (mapv #(mapv sort %)
+            (mapv (fn [subsets] (filter #(not= (first %) (second %)) subsets))
+                  (mapv #(vec (link-subsets (flatten %)))
+                        (#(mapv filter-adjacencies % (rest %) (rest (rest %))) (stuff-linksets test-linksets))))))
+
+(defn- all-link-supersets [linksets]
+  (let [stuffed-linksets (apply vector [-1 -1 -1] (conj linksets [-1 -1 -1]))
+        possible-links #(mapv filter-adjacencies % (rest %) (rest (rest %)))]
+    "PLACEHOLDER - MAP PAIRS OUT OF LEFT TO RIGHT AND FILTER OUT DUPLICATES"
+    ))
+
+#(mapv filter-adjacencies % (rest %) (rest (rest %))) (stuff-linksets test-linksets)
