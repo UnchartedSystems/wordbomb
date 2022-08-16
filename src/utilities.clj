@@ -5,7 +5,7 @@
 (def all-words (set (map str/upper-case (str/split-lines (slurp "words-all.txt")))))
 (def core-words (set (map str/upper-case (str/split-lines (slurp "words-core.txt")))))
 
-(def test-puzzle [[4 \P] [0 2] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \O] [1 3] [4 \R]])
+(def test-puzzle [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \O] [1 3] [4 \R]])
 (def string-puzzle "4P021N340F123C042O")
 
 (defn- split-pairs [seq]
