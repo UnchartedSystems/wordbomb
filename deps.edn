@@ -1,1 +1,2 @@
-{:aliases {:wbomb {}}}
+{:deps  {com.taoensso/tufte {:mvn/version "2.3.0-RC1"}}
+ :aliases {:wbomb {}}}
