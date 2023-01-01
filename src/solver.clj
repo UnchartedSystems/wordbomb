@@ -2,22 +2,12 @@
   (:require [utilities :as utils]
             [taoensso.tufte :as tufte :refer (defnp p profiled profile)]))
 
-;; ;; We'll request to send `profile` stats to `println`:
-;; (tufte/add-basic-println-handler! {})
 
-;; ;;; Let's define a couple dummy fns to simulate doing some expensive work
-;; (defn get-x [] (Thread/sleep 500)             "x val")
-;; (defn get-y [] (Thread/sleep (rand-int 1000)) "y val")
-
-;; ;; How do these fns perform? Let's check:
-
-;; (profile ; Profile any `p` forms called during body execution
-;;   {} ; Profiling options; we'll use the defaults for now
-;;   (dotimes [_ 5]
-;;     (p :get-x (get-x))
-;;     (p :get-y (get-y))))
-
-
+;; TODO:
+;;  - Fitness Function that values Curated Words more
+;;  - Multithreaded parallelism for functions
+;;  - Rewrite solution
+;;  - FIXME: Rewrite Solution Search to not blow the stack and allow concurrency
 
 ;; NOTE: A fitness function that values curated words more then all words would be useful
 ;; HACK REVIEW TODO: Rewrite Solution Search to not blow the stack and allow concurrency
@@ -67,10 +57,11 @@
     (filter core-solution? solutions)))
 
 (defn core-solutions [puzzle]
-  (cleanup puzzle (solution-search (valid-rows puzzle utils/core-words))))
+  (cleanup puzzle (solution-search (valid-rows puzzle utils/all-words))))
 
 #_(cleanup (solution-search (valid-rows test-puzzle all-words)))
 #_(count (filter-core (cleanup (solution-search (valid-rows test-puzzle all-words)))))
 (cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
 #_(valid-rows test-puzzle all-words)
 
+(core-solutions [[4 \N] [0 2] [1 \T] [3 4] [2 \I] [0 1] [3 \U] [2 4] [0 \S]])
