@@ -57,11 +57,15 @@
     (filter core-solution? solutions)))
 
 (defn core-solutions [puzzle]
-  (cleanup puzzle (solution-search (valid-rows puzzle utils/all-words))))
+  (cleanup puzzle (solution-search (valid-rows puzzle utils/core-words))))
+
+(defn solutions [puzzle wordset]
+  (cleanup puzzle (solution-search (valid-rows puzzle wordset))))
 
 #_(cleanup (solution-search (valid-rows test-puzzle all-words)))
 #_(count (filter-core (cleanup (solution-search (valid-rows test-puzzle all-words)))))
-(cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
+#_(cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
 #_(valid-rows test-puzzle all-words)
 
-(core-solutions [[4 \N] [0 2] [1 \T] [3 4] [2 \I] [0 1] [3 \U] [2 4] [0 \S]])
+
+(core-solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])
