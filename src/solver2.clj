@@ -95,6 +95,10 @@
 ;;       it might be that when the key is called in solutions the links
 ;;       are actually produced by rowsets!
 
+;; NOTE: One way to see if this works is to attach a side effect to the
+;;       code that uses the lazily evald map that accumulates a count, and
+;;       seeing if that count is different then the count of the map itself
+
 (defn solutions [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)
