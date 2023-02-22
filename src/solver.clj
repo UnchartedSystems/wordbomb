@@ -35,8 +35,8 @@
   (let [letters (vec (take-nth 2 puzzle))
         links   (vec (take-nth 2 (rest puzzle)))
         row-sets (mapv (fn [[n l]] (filter #(= (get % n) l) word-set)) letters)]
-    #_(map valid-row row-sets (rest row-sets) links)
-  row-sets))
+    (map valid-row row-sets (rest row-sets) links)
+  #_row-sets))
 
 
 

@@ -53,19 +53,17 @@
        (recur next-row (rest rows) (rest links) (conj linksets linkset))))))
 
 
+(defn- filter-row-by-word [word row-set row-links]
+  (assert (string? word) "wrong type: 'word' is not string")
+  (letfn [(linked? [i] (if (some #(= % i) row-links) = not=))
+          (letters-valid? [new-word] (mapv #((linked? %) (get word %) (get new-word %)) (range 5)))
+          (word-valid? [word] (apply = true (letters-valid? word)))]
+    (filter word-valid? row-set)))
 
-(defn- test-rows-linksets
-  ([rows links] (test-rows-linksets (first rows) (rest rows) links []))
-  ([row rows links linksets]
-   (? rows)
-   (if (empty? rows)
-     linksets
-     (let [linkset  (p :ls (doall (get-row-linkset (first links) row (first rows))))
-           mp       (p :mp (doall (map #(second %) linkset)))
-           flat     (p :flat (doall (flatten mp)))
-           next-row (p :set (doall (set flat)))]
-       #_(recur next-row (rest rows) (rest links) (conj linksets linkset))
-       next-row))))
+(defn- valid-row [this-row next-row row-links]
+  (let [valid-wordset (fn [w] (filter-row-by-word w next-row row-links))
+        filter-empties #(if (empty? %3) %1 (assoc %1 %2 %3))]
+    (reduce #(filter-empties %1 %2 (valid-wordset %2)) {} this-row)))
 
 
 ;; NOTE: modified DFS for structure of linksets & 'all permuations' goal
@@ -86,13 +84,18 @@
      @solutions))
 
 
+;; TODO: Find a performant blend of lazyness + good code
+;;       I think the main perf gains of s1-ls is lazy eval can finish early
+;;       means my intuition could be right about s2-ls being more efficient
+;;       need to research more and maybe harness lazy evaluation + maps for s2-ls
+;;       maybe finally get some multithreading action in.
+;;
 (defn solutions [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)
-        linksets        (p :linksets (test-rows-linksets rowsets links))
+        linksets        (p :s2-ls (doall (get-rows-linksets rowsets links)))
+        linksets        (p :s1-ls (doall (map valid-row rowsets (rest rowsets) links)))
         ]
-    #_(p :solutions (get-solutions linksets))
-    linksets))
+    (p :solutions (get-solutions linksets))))
 
-get-rows-linksets
 (profile {} (dotimes [_ 10] (p :s2 (solutions input utils/all-words))))
