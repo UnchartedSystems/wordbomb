@@ -89,7 +89,12 @@
 ;;       means my intuition could be right about s2-ls being more efficient
 ;;       need to research more and maybe harness lazy evaluation + maps for s2-ls
 ;;       maybe finally get some multithreading action in.
-;;
+
+;; NOTE: Maybe the reason s1 worked so well as lazy eval is because
+;;       it was acting as the set does in s2! In a map data structure
+;;       it might be that when the key is called in solutions the links
+;;       are actually produced by rowsets!
+
 (defn solutions [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)
