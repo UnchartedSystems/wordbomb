@@ -31,6 +31,7 @@
 (def n? #(do (println (count %)) %))
 
 
+;; NOTE: S2
 (defn- get-word-linkset [word link-fns row2-words]
   (let [compatible? (fn [next-word] (apply = true (map #(%1 %2 %3) link-fns word next-word)))]
     (filter compatible? row2-words)))
@@ -53,6 +54,7 @@
        (recur next-row (rest rows) (rest links) (conj linksets linkset))))))
 
 
+;; NOTE: S1
 (defn- filter-row-by-word [word row-set row-links]
   (assert (string? word) "wrong type: 'word' is not string")
   (letfn [(linked? [i] (if (some #(= % i) row-links) = not=))
@@ -64,6 +66,11 @@
   (let [valid-wordset (fn [w] (filter-row-by-word w next-row row-links))
         filter-empties #(if (empty? %3) %1 (assoc %1 %2 %3))]
     (reduce #(filter-empties %1 %2 (valid-wordset %2)) {} this-row)))
+
+(defn- valid-row2 [this-row next-row row-links]
+  (let [valid-wordset (fn [w] (filter-row-by-word w next-row row-links))]
+    (filter #(not-empty (second %)) (map #(list % (valid-wordset %)) this-row))))
+
 
 
 ;; NOTE: modified DFS for structure of linksets & 'all permuations' goal
@@ -100,14 +107,23 @@
 ;;       seeing if that count is different then the count of the map itself
 
 ;; NOTE: New idea! by coupling the generation of linksets with the dfs
-;;       we can generate only the words we need to!
+;;       we can generate only the words we need to.
+;;       NOTE: this is made difficult by the need to avoid regenerating
+;;       linkset '(word links). Possible solutions:
+;;          - pass the linksets to the next word, requires new structure
+;;            is not parallel!
+;;          - create an atom for linksets: understand concurrency of atoms
+;;          - use lazyness!
 
 (defn solutions [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)
-        linksets        (p :s2-ls (doall (get-rows-linksets rowsets links)))
-        linksets        (p :s1-ls (doall (map valid-row rowsets (rest rowsets) links)))
+        linksets1        (p :s2-ls (get-rows-linksets rowsets links))
+        linksets2        (p :s1-ls (map valid-row rowsets (rest rowsets) links))
+        linksets3        (p :s1b-ls (map valid-row2 rowsets (rest rowsets) links))
         ]
-    (p :solutions (get-solutions linksets))))
+    [(p :s2-sol (get-solutions linksets1))
+     (p :s1-sol (get-solutions linksets2))
+     (p :s1b-sol (get-solutions linksets3))]))
 
-(profile {} (dotimes [_ 10] (p :s2 (solutions input utils/all-words))))
+(profile {} (dotimes [_ 3] (p :s2 (solutions input utils/all-words))))
