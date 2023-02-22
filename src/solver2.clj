@@ -2,8 +2,7 @@
   (:require [utilities :as utils]
             [solver :as solv]
             [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]
-            [clj-async-profiler.core :as prof]
-            [taoensso.tufte :as tufte]))
+            [clj-async-profiler.core :as prof]))
 
 (add-basic-println-handler! {})
 
