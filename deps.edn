@@ -1,2 +1,4 @@
-{:deps  {com.taoensso/tufte {:mvn/version "2.3.0-RC1"}}
+{:deps  {com.taoensso/tufte {:mvn/version "2.3.0-RC1"}
+         com.github.jpmonettas/flow-storm-dbg {:mvn/version "RELEASE"}
+         com.clojure-goes-fast/clj-async-profiler {:mvn/version "1.0.3"}}
  :aliases {:wbomb {}}}

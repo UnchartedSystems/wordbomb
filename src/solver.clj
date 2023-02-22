@@ -17,6 +17,8 @@
 ;; TODO: For rewriting Solution Search
 
 
+
+
 (defn- filter-row-by-word [word row-set row-links]
   (assert (string? word) "wrong type: 'word' is not string")
   (letfn [(linked? [i] (if (some #(= % i) row-links) = not=))
@@ -29,11 +31,14 @@
         filter-empties #(if (empty? %3) %1 (assoc %1 %2 %3))]
     (reduce #(filter-empties %1 %2 (valid-wordset %2)) {} this-row)))
 
-(defn- valid-rows [puzzle word-set]
+(defn valid-rows [puzzle word-set]
   (let [letters (vec (take-nth 2 puzzle))
         links   (vec (take-nth 2 (rest puzzle)))
         row-sets (mapv (fn [[n l]] (filter #(= (get % n) l) word-set)) letters)]
-    (map valid-row row-sets (rest row-sets) links)))
+    #_(map valid-row row-sets (rest row-sets) links)
+  row-sets))
+
+
 
 ;; HACK: builds stack frames via mapped recursion
 (defn- solution-search
@@ -67,5 +72,5 @@
 #_(cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
 #_(valid-rows test-puzzle all-words)
 
-
+(valid-rows [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words)
 (core-solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])

@@ -1,6 +1,10 @@
 (ns utilities
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [flow-storm.api :as fs-api]))
 
+
+#_(fs-api/local-connect)
+#_(fs-api/instrument-namespaces-clj #{"solver2"})
 
 (def all-words (set (map str/upper-case (str/split-lines (slurp "words-all.txt")))))
 (def core-words (set (map str/upper-case (str/split-lines (slurp "words-core.txt")))))
