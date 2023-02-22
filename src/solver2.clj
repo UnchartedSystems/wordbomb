@@ -32,16 +32,16 @@
 
 
 ;; NOTE: S2
-(defn- get-word-linkset [word link-fns row2-words]
+(defn- get-word-linkset [word row2-words link-fns]
   (let [compatible? (fn [next-word] (apply = true (map #(%1 %2 %3) link-fns word next-word)))]
     (filter compatible? row2-words)))
 
 ; TODO: save new subset for next base-row & save base-words -> next-words
-(defn- get-row-linkset [link-constraint row-words row2-words]
-  (let [link-bools    (map #(contains? (set link-constraint) %) (range 5))
+(defn- row-linkset [row next-row link]
+  (let [link-bools    (map #(contains? (set link) %) (range 5))
         link-fns      (map #(if % = not=) link-bools)]
     (filter #(not-empty (second %))
-             (map #(list % (get-word-linkset % link-fns row2-words)) row-words))))
+             (map #(list % (get-word-linkset % next-row link-fns)) row))))
 
 ; FIXME: Confusing terrible perf
 (defn- get-rows-linksets
@@ -63,11 +63,6 @@
     (filter word-valid? row-set)))
 
 (defn- valid-row [this-row next-row row-links]
-  (let [valid-wordset (fn [w] (filter-row-by-word w next-row row-links))
-        filter-empties #(if (empty? %3) %1 (assoc %1 %2 %3))]
-    (reduce #(filter-empties %1 %2 (valid-wordset %2)) {} this-row)))
-
-(defn- valid-row2 [this-row next-row row-links]
   (let [valid-wordset (fn [w] (filter-row-by-word w next-row row-links))]
     (filter #(not-empty (second %)) (map #(list % (valid-wordset %)) this-row))))
 
@@ -118,12 +113,10 @@
 (defn solutions [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)
-        linksets1        (p :s2-ls (get-rows-linksets rowsets links))
-        linksets2        (p :s1-ls (map valid-row rowsets (rest rowsets) links))
-        linksets3        (p :s1b-ls (map valid-row2 rowsets (rest rowsets) links))
+        linksets1        (p :s2-ls (map row-linkset rowsets (rest rowsets) links))
+        linksets2        (p :s3-ls (map valid-row rowsets (rest rowsets) links))
         ]
     [(p :s2-sol (get-solutions linksets1))
-     (p :s1-sol (get-solutions linksets2))
-     (p :s1b-sol (get-solutions linksets3))]))
+     (p :s3-sol (get-solutions linksets2))]))
 
 (profile {} (dotimes [_ 3] (p :s2 (solutions input utils/all-words))))
