@@ -99,6 +99,9 @@
 ;;       code that uses the lazily evald map that accumulates a count, and
 ;;       seeing if that count is different then the count of the map itself
 
+;; NOTE: New idea! by coupling the generation of linksets with the dfs
+;;       we can generate only the words we need to!
+
 (defn solutions [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)
