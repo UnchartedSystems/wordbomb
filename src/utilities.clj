@@ -1,6 +1,5 @@
 (ns utilities
-  (:require [clojure.string :as str]
-            [flow-storm.api :as fs-api]))
+  (:require [clojure.string :as str]))
 
 
 #_(fs-api/local-connect)

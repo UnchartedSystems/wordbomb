@@ -39,7 +39,6 @@
   #_row-sets))
 
 
-
 ;; HACK: builds stack frames via mapped recursion
 (defn- solution-search
   ([word rows-left prev-words]
@@ -64,8 +63,14 @@
 (defn core-solutions [puzzle]
   (cleanup puzzle (solution-search (valid-rows puzzle utils/core-words))))
 
+
 (defn solutions [puzzle wordset]
   (cleanup puzzle (solution-search (valid-rows puzzle wordset))))
+
+(defn solutions2 [puzzle wordset]
+  (let [x (p :1b-ls (valid-rows puzzle wordset))
+        y (p :1b-sol (solution-search x) )]
+  (p :1b-clean (cleanup puzzle y))))
 
 #_(cleanup (solution-search (valid-rows test-puzzle all-words)))
 #_(count (filter-core (cleanup (solution-search (valid-rows test-puzzle all-words)))))
@@ -74,3 +79,5 @@
 
 (valid-rows [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words)
 (core-solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])
+
+(count (solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words))
