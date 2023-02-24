@@ -38,8 +38,6 @@
     (map valid-row row-sets (rest row-sets) links)
   #_row-sets))
 
-
-;; HACK: builds stack frames via mapped recursion
 (defn- solution-search
   ([word rows-left prev-words]
    (if (empty? rows-left)

@@ -23,5 +23,9 @@
 (defn- puzzle-vec-to-str [v] (apply str (flatten v)))
 
 
-
-all-words
+;; NOTE: testing set perf on strings
+(defn make-word
+  ([] (make-word 26))
+  ([alph]
+   (let [get-char #(char (+ 65 (rand alph)))]
+     (apply str (take 5 (repeatedly get-char))))))
