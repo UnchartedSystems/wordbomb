@@ -2,7 +2,7 @@
   (:require [utilities :as utils]
             [solver :as solv]
             [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]
-            [clj-async-profiler.core :as prof]))
+            [clj-async-profiler.core :as flame]))
 
 (set! *warn-on-reflection* true)
 (add-basic-println-handler! {})
@@ -121,8 +121,8 @@
 #_(solutions input utils/all-words)
 ;(count (set (flatten (solutions input utils/all-words))))
 
-#_(prof/profile (dotimes [_ 5] (solutions input utils/all-words)))
-#_(prof/serve-ui 8080)
+#_(flame/profile (dotimes [_ 5] (solutions input utils/all-words)))
+#_(flame/serve-ui 8080)
 
 
 (profile {} (dotimes [_ 7]
