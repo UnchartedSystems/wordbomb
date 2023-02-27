@@ -1,7 +1,6 @@
 (ns solver
   (:require [utilities :as utils]
-            [taoensso.tufte :as tufte :refer (defnp p profiled profile)]))
-
+            [taoensso.tufte :as tufte :refer (defnp- defnp p profiled profile)]))
 
 ;; TODO:
 ;;  - Fitness Function that values Curated Words more
@@ -15,9 +14,6 @@
 ;; TODO: For creating row-sets!
 ;; TODO: For creating valid-rows
 ;; TODO: For rewriting Solution Search
-
-
-
 
 (defn- filter-row-by-word [word row-set row-links]
   (assert (string? word) "wrong type: 'word' is not string")
@@ -52,30 +48,27 @@
   (let [len (count (vec (take-nth 2 puzzle)))]
     (partition len (flatten solutions))))
 
-;; Used for triple checking core solution count from all solutions
 (defn- filter-core [solutions]
   (let [core-word? (fn [w] (some #(= w %) utils/core-words))
         core-solution? (fn [s] (apply = true (map core-word? s)))]
     (filter core-solution? solutions)))
 
-(defn core-solutions [puzzle]
-  (cleanup puzzle (solution-search (valid-rows puzzle utils/core-words))))
-
-
 (defn solutions [puzzle wordset]
   (cleanup puzzle (solution-search (valid-rows puzzle wordset))))
 
+(defn linksets [puzzle wordset]
+  (let [all-linksets (valid-rows puzzle wordset)]
+  (doall all-linksets)))
+
 (defn solutions2 [puzzle wordset]
-  (let [x (p :1b-ls (valid-rows puzzle wordset))
-        y (p :1b-sol (solution-search x) )]
-  (p :1b-clean (cleanup puzzle y))))
+  (let [x (valid-rows puzzle wordset)
+        y (solution-search x)]
+  (cleanup puzzle y)))
 
 #_(cleanup (solution-search (valid-rows test-puzzle all-words)))
 #_(count (filter-core (cleanup (solution-search (valid-rows test-puzzle all-words)))))
 #_(cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
 #_(valid-rows test-puzzle all-words)
-
-(valid-rows [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words)
-(core-solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])
-
-(count (solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words))
+#_(valid-rows [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words)
+#_(core-solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])
+#_(count (solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words))

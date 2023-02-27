@@ -25,22 +25,7 @@
 ;;       OR
 ;;       Use only simple args on Caching
 
-(def input [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])
-
-(defn- get-all-row-subsets [rows wordset]
-  (doall (map (fn [[i l]] (filter #(= (get % i) l) wordset)) rows)))
-
-
-(defn- filter-row-by-word [word rowset [link-1 link-2]]
-  (letfn [(compatible? [w]
-            (every? true?
-             (map #(if (or (= link-1 %) (= link-2 %))
-                     (= (get word %) (get w %))
-                     (not= (get word %) (get w %)))
-                  (range 5))))]
-    (doall (filter compatible? rowset))))
-
-
+;; NOTE: DFS design
 ;; Is rows empty?
 ;;    yes - return word in a list
 ;;    no  -
@@ -52,37 +37,28 @@
 ;;            Process return into '(("word" "word" "word") ("word" "word" "word") ("word" "word" "word"))
 ;;            cache it
 
-(defn- dfs-eager [word i rows links]
-  ())
 
-(defn- get-solutions [[base-row & next-rows] links]
-  (map #(dfs-eager % 0 next-rows links) base-row))
+(defn- eager-get-rowsets [rows wordset]
+  (doall (map (fn [[i l]] (filter #(= (get % i) l) wordset)) rows)))
 
-(defn solutions [puzzle wordset]
-  (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
-        rowsets         (get-all-row-subsets rows wordset)]
-    (get-solutions rowsets links)))
+(defn- get-linkset [word rowset [link-1 link-2]]
+  (letfn [(compatible? [w]
+            (every? true?
+             (map #(if (or (= link-1 %) (= link-2 %))
+                     (= (get word %) (get w %))
+                     (not= (get word %) (get w %)))
+                  (range 5))))]
+    (doall (filter compatible? rowset))))
 
-(solutions input utils/all-words)
 
-(profile
- {}
- (p :sol (solutions input utils/all-words)))
+(defn- get-linksets [row next-row link]
+    (into {}
+          (filterv #(not-empty (peek %))
+             (map #(vector % (get-linkset % next-row link)) row))))
 
-;; '(("word" "word" "word") ("word" "word" "word") ("word" "word" "word") ("word" "word" "word"))
-;; ;; This
-;; '({"word" ("word" "word") "word2" ("word" "word")}
-;;   {"word" ("word" "word") "word2" ("word" "word")}
-;;   {"word" ("word" "word") "word2" ("word" "word")})
-
-;; (profile {}
-;;          (dotimes [_ 100]
-;;          (p :merge (merge '() '()))
-;;          (p :big-merge (merge '((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
-;;          (p :empty? (empty? '(((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10))))
-;;          (p :map (map #(println %) '()))
-;;          (p :count (count '(((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10))))
-;;          (p :flat (flatten '("1" (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 2 3 4 (1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
-;;          (p :apply (apply = true '(true true true true false false true true)))
-;;          (p :every? (every? true? '(true true true true false false true true)))
-;;          (p :reduce (reduce + 0 '(1 2 3 4 5 6 7 8 9 10)))))
+(defn linksets [puzzle wordset]
+  (let [rows            (take-nth 2 puzzle)
+        links           (take-nth 2 (rest puzzle))
+        rowsets         (eager-get-rowsets rows wordset)
+        all-linksets    (map get-linksets rowsets (rest rowsets) links)]
+    (doall all-linksets)))
