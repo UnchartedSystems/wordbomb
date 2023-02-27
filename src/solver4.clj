@@ -3,6 +3,8 @@
             [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]
             [clj-async-profiler.core :as flame]))
 
+(add-basic-println-handler! {})
+
 ;; NOTE: Design a permutations accumulator that:
 ;;       Can be multithreaded
 ;;       Only does needed work!
@@ -28,38 +30,59 @@
 (defn- get-all-row-subsets [rows wordset]
   (doall (map (fn [[i l]] (filter #(= (get % i) l) wordset)) rows)))
 
-(defn- dfs-old [solutions linksets wordlinks path]
-   (let [word       (first wordlinks)
-         adj-words  (second wordlinks)
-         path       (conj path word)]
-       (doseq [w adj-words]
-        (if (empty? linksets)
-          (swap! solutions conj (conj path w))
-          (some #(when (= w (first %))
-                  (dfs-old solutions (rest linksets) % path))
-                (first linksets))))))
 
-(defn- dfs-eager []
+(defn- filter-row-by-word [word rowset [link-1 link-2]]
+  (letfn [(compatible? [w]
+            (every? true?
+             (map #(if (or (= link-1 %) (= link-2 %))
+                     (= (get word %) (get w %))
+                     (not= (get word %) (get w %)))
+                  (range 5))))]
+    (doall (filter compatible? rowset))))
+
+
+;; Is rows empty?
+;;    yes - return word in a list
+;;    no  -
+;;      Generate Wordset
+;;      Is wordset empty?
+;;          yes - return nil
+;;          no  -
+;;            For each word -> recur
+;;            Process return into '(("word" "word" "word") ("word" "word" "word") ("word" "word" "word"))
+;;            cache it
+
+(defn- dfs-eager [word i rows links]
   ())
 
+(defn- get-solutions [[base-row & next-rows] links]
+  (map #(dfs-eager % 0 next-rows links) base-row))
 
 (defn solutions [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)]
-    rowsets))
+    (get-solutions rowsets links)))
 
 (solutions input utils/all-words)
 
-(add-basic-println-handler! {})
-(profile {}
-         (p :merge (merge '() '()))
-         (p :big-merge (merge '((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
-         (p :flat (flatten '("1" (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 2 3 4 (1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
-         (p :apply (apply + '(1 2 3 4 5 6 7 8 9 10)))
-         (p :reduce (reduce + 0 '(1 2 3 4 5 6 7 8 9 10))))
+(profile
+ {}
+ (p :sol (solutions input utils/all-words)))
 
 ;; '(("word" "word" "word") ("word" "word" "word") ("word" "word" "word") ("word" "word" "word"))
 ;; ;; This
 ;; '({"word" ("word" "word") "word2" ("word" "word")}
 ;;   {"word" ("word" "word") "word2" ("word" "word")}
 ;;   {"word" ("word" "word") "word2" ("word" "word")})
+
+;; (profile {}
+;;          (dotimes [_ 100]
+;;          (p :merge (merge '() '()))
+;;          (p :big-merge (merge '((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
+;;          (p :empty? (empty? '(((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10))))
+;;          (p :map (map #(println %) '()))
+;;          (p :count (count '(((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10))))
+;;          (p :flat (flatten '("1" (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 2 3 4 (1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
+;;          (p :apply (apply = true '(true true true true false false true true)))
+;;          (p :every? (every? true? '(true true true true false false true true)))
+;;          (p :reduce (reduce + 0 '(1 2 3 4 5 6 7 8 9 10)))))

@@ -30,29 +30,6 @@
           (filterv #(not-empty (peek %))
              (map #(vector % (get-word-linkset % next-row link-fns)) row)))))
 
-(defn- row-linkset-b [row next-row link]
-  (let [link-bools    (map #(contains? (set link) %) (range 5))
-        link-fns      (map #(if % = not=) link-bools)]
-          (into {}
-          (filterv #(not-empty (peek %))
-             (map #(vector % (get-word-linkset % next-row link-fns)) row)))))
-
-(defn- row-linkset-c [row next-row [link1 link2]]
-  (let [link-bools    (map #(if (or (== link1 %) (== link2 %)) true false) (range 5))
-        link-fns      (map #(if % = not=) link-bools)]
-          (filter #(not-empty (peek %))
-             (map #(list % (get-word-linkset % next-row link-fns)) row))))
-
-; FIXME: Confusing terrible perf
-(defn- rows-linksets [row rows links linksets]
-  (if (empty? rows)
-    linksets
-    (let [linkset  (doall (row-linkset-b row (first rows) (first links)))
-          next-row (doall (set (flatten (map #(nth % 1) linkset))))]
-      (recur next-row (rest rows) (rest links) (conj linksets linkset)))))
-
-
-;; NOTE: S1
 (defn- filter-row-by-word [word row-set row-links]
   (assert (string? word) "wrong type: 'word' is not string")
   (letfn [(linked? [i] (if (some #(= % i) row-links) = not=))
@@ -69,6 +46,36 @@
         filter-empties #(if (empty? %3) %1 (assoc %1 %2 %3))]
     (reduce #(filter-empties %1 %2 (valid-wordset %2)) {} this-row)))
 
+
+
+
+(defn- get-word-linkset [word row2-words link-fns]
+  (let [compatible? (fn [next-word] (apply = true (map #(%1 %2 %3) link-fns word next-word)))]
+    (filter compatible? row2-words)))
+
+
+; TODO: save new subset for next base-row & save base-words -> next-words
+(defn- row-linkset [row next-row link]
+  (let [link-bools    (map #(contains? (set link) %) (range 5))
+        link-fns      (map #(if % = not=) link-bools)]
+    (into {}
+          (filterv #(not-empty (peek %))
+             (map #(vector % (get-word-linkset % next-row link-fns)) row)))))
+
+(defn- solver4-filter-row [word rowset [link-1 link-2]]
+  (letfn [(compatible? [w]
+            (every? true?
+             (map #(p :filter-map (if (or (= link-1 %) (= link-2 %))
+                     (= (get word %) (get w %))
+                     (not= (get word %) (get w %))))
+                  (range 5))))]
+    (p :filter-row (doall (filter #(p :compatible? (compatible? %)) rowset)))))
+
+
+(defn- solver4-row-linkset [row next-row link]
+    (into {}
+          (filterv #(not-empty (peek %))
+             (map #(vector % (solver4-filter-row % next-row link)) row))))
 
 ;; NOTE: modified DFS for structure of linksets & 'all permuations' goal
 (defn- dfs [solutions linksets wordlinks path]
@@ -110,13 +117,20 @@
         rowsets         (get-all-row-subsets rows wordset)
         linksets        (map row-linkset rowsets (rest rowsets) links)
         ]
-     (get-solutions linksets)))
+    (doall linksets)
+     #_(get-solutions linksets)))
 
-(defn solutions-b [puzzle wordset]
+
+(defn solutions-3 [puzzle wordset]
   (let [[rows links]    [(take-nth 2 puzzle) (take-nth 2 (rest puzzle))]
         rowsets         (get-all-row-subsets rows wordset)
-        linksets        (rows-linksets (first rowsets) (rest rowsets) links [])]
-     (get-solutions-b linksets)))
+        linksets        (map solver4-row-linkset rowsets (rest rowsets) links)
+        ]
+    (doall linksets)
+    #_(get-solutions linksets)))
+
+
+
 
 #_(solutions input utils/all-words)
 ;(count (set (flatten (solutions input utils/all-words))))
@@ -125,9 +139,8 @@
 #_(flame/serve-ui 8080)
 
 
-(profile {} (dotimes [_ 7]
+(profile {} (dotimes [_ 5]
               (p :1b  (solv/solutions2 input utils/all-words))
               (p :2   (solutions input utils/all-words))
-              (p :2b  (solutions-b input utils/all-words))
-              ;(p :2c  (solutions-c input utils/all-words))
+              (p :4  (solutions-3 input utils/all-words))
               ))
