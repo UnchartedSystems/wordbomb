@@ -31,17 +31,11 @@
          (p :reduce (reduce + 0 '(1 2 3 4 5 6 7 8 9 10)))))
 
 
+
 (add-basic-println-handler! {})
 (profile
  {}
- (let [rows    (take-nth 2 input)]
-   (dotimes [_ 3]
-     (p :4d (s4/linksets4 input utils/all-words))
-     (p :4c (s4/linksets3 input utils/all-words))
-     (p :4b (s4/linksets2 input utils/all-words))
-     (p :4a (s4/linksets input utils/all-words))
-     ;; (p :ks (keep seq '(() (1) (1 2) () (3))))
-     ;; (p :ke (keep not-empty '(() (1) (1 2) () (3))))
-     ;; (p :fe (filter not-empty '(() (1) (1 2) () (3))))
-     ;; (p :fv (filterv not-empty '(() (1) (1 2) () (3))))
-     )))
+   (dotimes [_ 30]
+     (p :4a (solver4/linksets input utils/all-words))
+     (p :4b (solver4/linksets-b input utils/all-words))
+     ))
