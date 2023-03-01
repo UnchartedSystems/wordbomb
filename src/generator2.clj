@@ -37,3 +37,14 @@
  [2 \O]  ; 9,
  [1 3]   ; 10,
  [4 \R]] ; 11,
+;; NOTE: IF Lx-3/4 constraint doesn't exist: THEN *choose links*
+
+
+;; TODO: stupid implementation for now
+(defn- get-letter [pos]
+  (let [alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ"]
+    (get alphabet (rand 26))))
+
+(defn- make-rows [len]
+   (let [x (shuffle (range 5))]
+     ()))
