@@ -1,7 +1,8 @@
 (ns profile
   (:require [utilities :as utils]
-            [solver :as s1]
+            [solver1 :as s1]
             [solver2 :as s2]
+            [solver3 :as s3]
             [solver4 :as s4]
             [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]
             #_[clj-async-profiler.core :as flame]

@@ -1,7 +1,8 @@
-(ns solver-bruteforce
+(ns solver1
   (:require [clojure.string :as string]))
 
-;; Initial bruteforce, need more elegant solution when mass generating
+;; NOTE: terrible old solutions, avert your eyes!
+;; ;; Initial bruteforce, need more elegant solution when mass generating
 
 ;;;; Optimization consideration:
 ;; The default collection of filtered subset words belonging to every

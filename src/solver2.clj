@@ -1,65 +1,74 @@
 (ns solver2
   (:require [utilities :as utils]
-            [solver :as solv]
-            [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]
-            [clj-async-profiler.core :as flame]))
+            [taoensso.tufte :as tufte :refer (defnp- defnp p profiled profile)]))
 
-(defn- get-rowsets [rows wordset]
-  (map (fn [[i l]] (filter #(= (get % i) l) wordset)) rows))
+;; TODO:
+;;  - Fitness Function that values Curated Words more
+;;  - Multithreaded parallelism for functions
+;;  - Rewrite solution
+;;  - FIXME: Rewrite Solution Search to not blow the stack and allow concurrency
 
-(defn- get-word-linkset [word row2-words link-fns]
-  (let [compatible? (fn [next-word] (every? true? (map #(%1 %2 %3) link-fns word next-word)))]
-    (p :T (filter compatible? row2-words))))
+;; NOTE: A fitness function that values curated words more then all words would be useful
+;; HACK REVIEW TODO: Rewrite Solution Search to not blow the stack and allow concurrency
+;; NOTE TODO: Add multitasking support!
+;; TODO: For creating row-sets!
+;; TODO: For creating valid-rows
+;; TODO: For rewriting Solution Search
 
-(defn- row-linkset [row next-row link]
-  (let [link-bools    (map #(contains? (set link) %) (range 5))
-        link-fns      (map #(if % = not=) link-bools)]
-          (filter #(not-empty (nth % 1))
-             (map #(list % (get-word-linkset % next-row link-fns)) row))))
+(defn- filter-row-by-word [word row-set row-links]
+  (assert (string? word) "wrong type: 'word' is not string")
+  (letfn [(linked? [i] (if (some #(= % i) row-links) = not=))
+          (letters-valid? [new-word] (mapv #((linked? %) (get word %) (get new-word %)) (range 5)))
+          (word-valid? [word] (apply = true (letters-valid? word)))]
+    (filter word-valid? row-set)))
 
-;; NOTE: modified DFS for structure of linksets & 'all permuations' goal
-(defn- dfs [solutions linksets wordlinks path]
-   (let [word       (first wordlinks)
-         adj-words  (second wordlinks)
-         path       (conj path word)]
-       (doseq [w adj-words]
-        (if (empty? linksets)
-          (swap! solutions conj (conj path w))
-          (some #(when (= w (first %))
-                  (dfs solutions (rest linksets) % path))
-                (first linksets))))))
+(defn- valid-row [this-row next-row row-links]
+  (let [valid-wordset (fn [w] (filter-row-by-word w next-row row-links))
+        filter-empties #(if (empty? %3) %1 (assoc %1 %2 %3))]
+    (reduce #(filter-empties %1 %2 (valid-wordset %2)) {} this-row)))
 
-#_(defn- dfs-map [solutions linksets wordlinks path]
-   (let [word       (key wordlinks)
-         adj-words  (val wordlinks)
-         path       (conj path word)]
-       (doseq [w adj-words]
-        (if (empty? linksets)
-          (swap! solutions conj (conj path w))
-          (some #(when (= w (first %))
-                  (dfs solutions (rest linksets) % path))
-                (first linksets))))))
+(defn valid-rows [puzzle word-set]
+  (let [letters (vec (take-nth 2 puzzle))
+        links   (vec (take-nth 2 (rest puzzle)))
+        row-sets (mapv (fn [[n l]] (filter #(= (get % n) l) word-set)) letters)]
+    (map valid-row row-sets (rest row-sets) links)
+  #_row-sets))
 
-(defn- get-solutions [linksets]
-  (let [solutions (atom '())]
-    (doseq [wordset (first linksets)]
-      (dfs solutions (rest linksets) wordset []))
-     @solutions))
+(defn- solution-search
+  ([word rows-left prev-words]
+   (if (empty? rows-left)
+     (conj prev-words word)
+     (let [next-words (get (first rows-left) word)]
+       (map #(solution-search % (rest rows-left) (conj prev-words word)) next-words))))
+  ([rows]
+   (map #(solution-search (key %) rows []) (first rows))))
 
+;; HACK: downstream of stack recursion hack
+(defn- cleanup [puzzle solutions]
+  (let [len (count (vec (take-nth 2 puzzle)))]
+    (partition len (flatten solutions))))
 
-(defn test-linksets [rowsets links]
-  (doall (map row-linkset rowsets (rest rowsets) links)))
-
-(defn linksets [puzzle wordset]
-  (let [rows            (take-nth 2 puzzle)
-        links           (take-nth 2 (rest puzzle))
-        rowsets         (get-rowsets rows wordset)
-        all-linksets    (map row-linkset rowsets (rest rowsets) links)]
-     (doall all-linksets)))
+(defn- filter-core [solutions]
+  (let [core-word? (fn [w] (some #(= w %) utils/core-words))
+        core-solution? (fn [s] (apply = true (map core-word? s)))]
+    (filter core-solution? solutions)))
 
 (defn solutions [puzzle wordset]
-  (let [rows            (take-nth 2 puzzle)
-        links           (take-nth 2 (rest puzzle))
-        rowsets         (get-rowsets rows wordset)
-        all-linksets    (map row-linkset rowsets (rest rowsets) links)]
-     (get-solutions all-linksets)))
+  (cleanup puzzle (solution-search (valid-rows puzzle wordset))))
+
+(defn linksets [puzzle wordset]
+  (let [all-linksets (valid-rows puzzle wordset)]
+  (doall all-linksets)))
+
+(defn solutions2 [puzzle wordset]
+  (let [x (valid-rows puzzle wordset)
+        y (solution-search x)]
+  (cleanup puzzle y)))
+
+#_(cleanup (solution-search (valid-rows test-puzzle all-words)))
+#_(count (filter-core (cleanup (solution-search (valid-rows test-puzzle all-words)))))
+#_(cleanup utils/test-puzzle (solution-search (valid-rows utils/test-puzzle utils/core-words)))
+#_(valid-rows test-puzzle all-words)
+#_(valid-rows [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words)
+#_(core-solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])
+#_(count (solutions [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]] utils/all-words))
