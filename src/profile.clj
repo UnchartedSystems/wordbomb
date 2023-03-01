@@ -10,32 +10,12 @@
 
 (def input [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C]])
 
-
 ;; (flame/profile (dotimes [_ 5] (solutions input utils/all-words)))
 ;; (flame/serve-ui 8080)
-
-
-#_(profile {}
-         (dotimes [_ 100]
-         (p :merge (merge '() '()))
-         (p :big-merge (merge '((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
-         (p :empty? (empty? '(((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10))))
-         (p :map (map #(println %) '()))
-         (p :count (count '(((1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)) '((1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10))))
-         (p :flat (flatten '("1" (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 2 3 4 (1 2 3 4 (1 2 3 4 (1 2 3 4 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10) 5 6 7 8 9 10) 5 6 7 (1 2 3 4 5 6 7 8 9 10) 8 9 10)))
-         (p :apply (apply = true '(true true true true false false true true)))
-         (p :every? (every? true? '(true true true true false false true true)))
-         (p :jva (.charAt "HELLO" 3))
-         (p :get (get "HELLO" 3))
-         (p :nth (nth "HELLO" 3))
-         (p :reduce (reduce + 0 '(1 2 3 4 5 6 7 8 9 10)))))
-
-
 
 (add-basic-println-handler! {})
 (profile
  {}
    (dotimes [_ 30]
-     (p :4a (solver4/linksets input utils/all-words))
-     (p :4b (solver4/linksets-b input utils/all-words))
+     (p :4a (solver4/solutions input utils/all-words))
      ))
