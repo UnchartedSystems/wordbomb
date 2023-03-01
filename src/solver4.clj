@@ -69,27 +69,32 @@
       (doall (pmap #(dfs solutions linksets % []) (keys (first linksets))))
      @solutions))
 
-#_(def cache (w/fifo-cache-factory {}))
-(defn- get-wordset [word rowset [link-1 link-2]]
+(defn- get-wordset [word rowset [link-1 link-2] cache]
   (letfn [(compatible? [^java.lang.String w]
             (loop [i 0]
               (when (if (or (= link-1 i) (= link-2 i))
                       (.equals (nth word i) (nth w i))
                       (not (.equals (nth word i) (nth w i))))
                 (if (= i 4) w (recur (inc i))))))]
-    (filterv compatible? rowset)))
+    (let [kw (keyword word (peek rowset))]
+      (if-let [answer (kw @cache)]
+        answer
+        (let [answer (filterv compatible? rowset)]
+          (swap! cache assoc kw answer)
+          answer)))))
 
-(defn- dfs-b [word [link & links] [rowset & rowsets] solutions path]
+(defn- dfs-b [word [link & links] [rowset & rowsets] cache solutions path]
   (if (empty? rowset)
     (swap! solutions conj (conj path word))
-    (let [adj-words (get-wordset word rowset link)]
+    (let [adj-words (get-wordset word rowset link cache)]
       (when (not-empty adj-words)
         (doseq [w adj-words]
-          (dfs-b w links rowsets solutions (conj path word)))))))
+          (dfs-b w links rowsets cache solutions (conj path word)))))))
 
 (defn- get-solutions-b [links rowsets]
-  (let [solutions (atom '())]
-      (doall (pmap #(dfs-b % links (rest rowsets) solutions []) (first rowsets)))
+  (let [cache (atom {})
+        solutions (atom '())]
+      (doall (pmap #(dfs-b % links (rest rowsets) cache solutions []) (first rowsets)))
      @solutions))
 
 (defn linksets [puzzle wordset]
