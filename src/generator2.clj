@@ -1,5 +1,7 @@
 (ns generator2)
 
+;; :BUG: This approach (letters -> links), has been abandoned!
+;;       letter & link positioning is codependant
 
 ;; NOTE REVIEW TODO: All generated puzzles should have these properties
 ;; No link can connect a set letter
@@ -28,7 +30,7 @@
 ;; NOTE: Consider:
 [[4 \P]  ; 1, NOTE: Lx Letter Num -> Lx+3 Link Num 1
  [2 0]   ; 2, NOTE: (Difference: Lx+4 Links || Lx+1 Letter Num) -> Lx+4 Link Num 2
- [1 \N]  ; 3,
+ [1 \N]  ; 3, BUG: THIS DOES NOT HOLD!
  [3 4]   ; 4,
  [0 \F]  ; 5,
  [1 2]   ; 6,
@@ -54,7 +56,8 @@
          letters   (get-letter len)]
      (mapv vector positions letters)))
 
-(defn- solve-constraints [& constraints]
+(defn- solve-constraints [constraints]
+  (doall (println constraints))
   (let [constraints (set constraints)]
   (vec (take 2 (filter #(apply distinct? % constraints) (range 5))))))
 
@@ -62,15 +65,27 @@
 
 ;; TODO: inefficient & messy, start with pos? -> len > n
 (defn- make-link [coll element]
-  (let [len (count coll)
-        ]
+  (let [len (count coll)]
     (if (>= len 4)
       (conj coll [(nth (nth coll (- len 3)) 0)
                   (some #(and (not= % (nth (peek coll) 0)) %) (nth coll (- len 4)))]
             element)
       (if (>= len 2)
-        (conj coll (? "t " (apply solve-constraints (nth (peek coll) 0) (nth element 0) (nth coll (- len 2)))) element)
-        (conj coll (? "f " (solve-constraints (nth (peek coll) 0) (nth element 0))) element)))))
+        (conj coll (solve-constraints
+                    (apply list (nth (peek coll) 0)
+                           (nth element 0)
+                           (nth coll (- len 2)))) element)
+        (conj coll (solve-constraints
+                    (list (nth (peek coll) 0)
+                          (nth element 0))) element)))))
+
+;; (defn- create-link [coll element]
+;;   (conj coll
+;;         (solve-constraints
+;;          (keep identity
+;;                (apply list (nth (peek coll) 0) (nth element 0) (peek (pop coll)))))
+;;   element))
+
 
 (defn- make-links [rows]
   (reduce make-link [(nth rows 0)] (subvec rows 1)))

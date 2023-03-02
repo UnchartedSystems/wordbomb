@@ -1,5 +1,6 @@
 (ns player
   (:require [utilities :as utils]
+            [generator3 :as g3]
             [clojure.string :as str]))
 
 ;; Convert input-data into 2 representations of the board (a 2d vector of rows)
@@ -55,6 +56,7 @@
     (cond
       (= input-str "!EXIT")  "Game Over"
       (= input-str "!RESET")  (iter {} 0 true)
+      #_(= input-str "!NEW")    #_(initalize (g3/make-puzzle 5 5))
       (= input-str "!CLEAR")  (iter (dissoc words pos) pos true)
       (number? (read-string input-str))  (iter words (dec (read-string input-str)) true)
       (not (validate letters links words input-row input-str pos))  (do (println "Word Violates Rules") (iter words pos false))
@@ -68,4 +70,4 @@
         default (vec (map #(assoc (vec (repeat 5 false)) (first %) (second %)) letters))]
     (game-loop letters links default {} 0 true)))
 
-(initialize utils/test-puzzle)
+(initialize (g3/make-puzzle 5 5))

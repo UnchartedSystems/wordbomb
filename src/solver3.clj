@@ -9,7 +9,7 @@
 
 (defn- get-word-linkset [word row2-words link-fns]
   (let [compatible? (fn [next-word] (every? true? (map #(%1 %2 %3) link-fns word next-word)))]
-    (p :T (filter compatible? row2-words))))
+    (filter compatible? row2-words)))
 
 (defn- row-linkset [row next-row link]
   (let [link-bools    (map #(contains? (set link) %) (range 5))
