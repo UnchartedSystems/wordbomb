@@ -27,7 +27,7 @@
 
 ;; NOTE: Consider:
 [[4 \P]  ; 1, NOTE: Lx Letter Num -> Lx+3 Link Num 1
- [2 0]   ; 2, NOTE: (Difference: Lx Links || Lx+3 Letter Num) -> Lx+4 Link Num 2
+ [2 0]   ; 2, NOTE: (Difference: Lx+4 Links || Lx+1 Letter Num) -> Lx+4 Link Num 2
  [1 \N]  ; 3,
  [3 4]   ; 4,
  [0 \F]  ; 5,
@@ -40,11 +40,40 @@
 ;; NOTE: IF Lx-3/4 constraint doesn't exist: THEN *choose links*
 
 
-;; TODO: stupid implementation for now
-(defn- get-letter [pos]
+;; TODO: stupid implementation for now, needs frequencies
+(defn- get-letter [len]
   (let [alphabet "ABCDEFGHIJKLMNOPQRSTUVWXYZ"]
-    (get alphabet (rand 26))))
+    (take len (cycle (shuffle (map #(get alphabet %) (range 26)))))))
+
+;; TODO: stupid implementation for now, needs noncyclical randomness
+(defn- get-positions [len]
+  (take len (cycle (shuffle (range 5)))))
 
 (defn- make-rows [len]
-   (let [x (shuffle (range 5))]
-     ()))
+   (let [positions (get-positions len)
+         letters   (get-letter len)]
+     (mapv vector positions letters)))
+
+(defn- solve-constraints [& constraints]
+  (let [constraints (set constraints)]
+  (vec (take 2 (filter #(apply distinct? % constraints) (range 5))))))
+
+(def ? #(do (println %1 %2) %2))
+
+;; TODO: inefficient & messy, start with pos? -> len > n
+(defn- make-link [coll element]
+  (let [len (count coll)
+        ]
+    (if (>= len 4)
+      (conj coll [(nth (nth coll (- len 3)) 0)
+                  (some #(and (not= % (nth (peek coll) 0)) %) (nth coll (- len 4)))]
+            element)
+      (if (>= len 2)
+        (conj coll (? "t " (apply solve-constraints (nth (peek coll) 0) (nth element 0) (nth coll (- len 2)))) element)
+        (conj coll (? "f " (solve-constraints (nth (peek coll) 0) (nth element 0))) element)))))
+
+(defn- make-links [rows]
+  (reduce make-link [(nth rows 0)] (subvec rows 1)))
+
+(defn generate [len]
+  (make-links (make-rows len)))
