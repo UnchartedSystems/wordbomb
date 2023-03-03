@@ -23,10 +23,20 @@
 ;;
 
 (def pl println)
-(def p- println)
 
 
-(defn- game-loop []
+;; NOTE: Game loop
+;;        - Show representation of board!
+;;          - Player position
+;;          - Links
+;;          - Rows with PRESET & LINKED Letters filled
+;;          - Rows with WORD
+
+
+(defn- represent [rows links words pos]
+  )
+
+(defn- game-loop [puzzle]
   )
 
 
@@ -38,8 +48,8 @@
    (game true))
   ([_]
    (pl "New game! Choose difficulty:" "\n"
-       "Easy / Medium / Hard / Custom ")
-   (p- "Enter either 1/2/3/c:  ")
+       "Easy / Medium / Hard / Custom")
+   (pl "Enter either 1/2/3/c: ")
    (let [i (str/upper-case (read-line))]
      (cond (= i "1") (game 4 6 "\nEasy Selected! Have fun :D")
            (= i "2") (game 5 5 "\nMedium Selected! Good luck ;)")
@@ -55,6 +65,6 @@
    (game (g3/make-puzzle length bottleneck) "generated!"))
   ([puzzle message]
    (pl message)
-   (pl puzzle)))
+   (game-loop puzzle)))
 
 (game)
