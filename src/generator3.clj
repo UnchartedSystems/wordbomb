@@ -60,6 +60,15 @@
         (s4/solutions puzzle u/core-words)
         length)))
 
+;; Old version! mostly single threaded with brief spurts of multithreading, not as effective!
+(defn make-puzzle [length bottleneck]
+  (let [puzzle (generate [(make-row (do-smthng) '())] (dec length))]
+    (if (not-empty puzzle)
+      (if (<= bottleneck (apply min (bottlenecks? puzzle length)))
+        puzzle
+        (recur length bottleneck))
+      (recur length bottleneck))))
+
 (defn make-puzzle-iter [length bottleneck result]
   (let [puzzle (generate [(make-row (do-smthng) '())] (dec length))]
     (when-not (realized? result)
@@ -71,14 +80,6 @@
 
 (defn make-puzzle-p [length bottleneck]
   (let [result (promise)]
-    (doall (repeatedly u/n-cpu #(future (make-puzzle-iter length bottleneck result))))
+    (future (doall (apply pcalls (repeat u/n-cpu  #(make-puzzle-iter length bottleneck result)))))
     @result))
 
-;; TODO: parallelize puzzle generation!
-(defn make-puzzle [length bottleneck]
-  (let [puzzle (generate [(make-row (do-smthng) '())] (dec length))]
-    (if (not-empty puzzle)
-      (if (<= bottleneck (apply min (bottlenecks? puzzle length)))
-        puzzle
-        (recur length bottleneck))
-      (recur length bottleneck))))
