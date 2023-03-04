@@ -103,7 +103,7 @@
   ([length bottleneck message]
    (pl message)
    (pl "\ngenerating...")
-   (game (g3/make-puzzle length bottleneck) "generated!\n"))
+   (game (g3/make-puzzle-p length bottleneck) "generated!\n"))
   ([puzzle message]
    (pl message)
    (game-loop (u/split-puzzle puzzle))))

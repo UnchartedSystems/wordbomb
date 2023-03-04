@@ -12,6 +12,10 @@
 (def test-puzzle [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \O] [1 3] [4 \R]])
 (def string-puzzle "4P021N340F123C042O")
 
+;; NOTE: IDEA! Game should joke about the number of cores you have!
+;;        - If you have > ~>=16 threads: 'n threads! THE POWER! :stronglenni'
+;;        - If you have < ~<=8  threads: 'maybe this would be faster if your cpu had more than n threads :shrugemoji'
+(def n-cpu (.availableProcessors (Runtime/getRuntime)))
 
 (defn- split-pairs [coll]
   (loop [i coll, o []] (if (empty? i) o (recur (subvec i 2) (conj o (subvec i 0 2))))))

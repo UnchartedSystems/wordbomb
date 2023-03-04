@@ -60,6 +60,21 @@
         (s4/solutions puzzle u/core-words)
         length)))
 
+(defn make-puzzle-iter [length bottleneck result]
+  (let [puzzle (generate [(make-row (do-smthng) '())] (dec length))]
+    (when-not (realized? result)
+      (if (not-empty puzzle)
+        (if (<= bottleneck (apply min (bottlenecks? puzzle length)))
+          (deliver result puzzle)
+          (recur length bottleneck result))
+        (recur length bottleneck result)))))
+
+(defn make-puzzle-p [length bottleneck]
+  (let [result (promise)]
+    (doall (repeatedly u/n-cpu #(future (make-puzzle-iter length bottleneck result))))
+    @result))
+
+;; TODO: parallelize puzzle generation!
 (defn make-puzzle [length bottleneck]
   (let [puzzle (generate [(make-row (do-smthng) '())] (dec length))]
     (if (not-empty puzzle)
