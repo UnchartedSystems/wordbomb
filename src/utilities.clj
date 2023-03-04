@@ -1,5 +1,6 @@
 (ns utilities
-  (:require [clojure.string :as str]))
+  (:require [clojure.string :as str]
+            [clojure.data.int-map :as i]))
 
 
 #_(fs-api/local-connect)
@@ -29,6 +30,14 @@
   ([alph]
    (let [get-char #(char (+ 65 (rand alph)))]
      (apply str (take 5 (repeatedly get-char))))))
+
+(defn vecs->intmap [v]
+  (let [c (count v)]
+    (apply i/int-map (interleave (range c) v) )))
+
+(defn split-puzzle [puzzle]
+  [(take-nth 2 puzzle)
+   (take-nth 2 (subvec puzzle 1))])
 
 (defn all-frequencies [coll length]
   (mapv (fn [i] (frequencies (mapv #(get % i) coll))) (range length)))
