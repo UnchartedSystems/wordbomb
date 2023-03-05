@@ -71,5 +71,5 @@
 (defn make-puzzle-p [length bottleneck]
   (let [result (promise)
         n-gens (atom 0)]
-    (future (doall (apply pcalls (repeat u/n-cpu  #(make-puzzle-iter length bottleneck result generations)))))
+    (future (doall (apply pcalls (repeat u/n-cpu  #(make-puzzle-iter length bottleneck result n-gens)))))
     [@result @n-gens]))

@@ -102,6 +102,7 @@
           (c/white "Letterknot") "\n"
           "----------" "\n")
    (game true))
+
   ([_]
    (pl "New game! Choose difficulty:" "\n"
        "Easy / Medium / Hard / Custom")
@@ -113,8 +114,9 @@
            (= i "C") (game 5 5 "\nCustom games are a WIP")
            (= i "Q") (pl "\n Quitting Game! \n")
            (= i "4") (game 10 2 (str "\nIMPOSSIBLE Selected! \n"
-                                     "ψ(｀∇´)ψ HAHAHAHAHAHAHA"))
+                                     (c/red "ψ(｀∇´)ψ HAHAHAHAHAHAHA")))
            :else ((pl "\n Bad input! Try again \n") (game true)))))
+
   ;; TODO: make 'generating...' only appear after a set time, like 5seconds
   ([length bottleneck message]
    (pl message)
@@ -127,6 +129,7 @@
          next-message "All that to find the perfect puzzle for you <3\n"]
      (print gen-message)
      (game puzzle next-message)))
+
   ([puzzle message]
    (pl message)
    (game-loop (u/split-puzzle puzzle))))
