@@ -1,8 +1,7 @@
 (ns solver3
   (:require [utilities :as utils]
             [solver2 :as solv]
-            [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]
-            [clj-async-profiler.core :as flame]))
+            [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]))
 
 (defn- get-rowsets [rows wordset]
   (map (fn [[i l]] (filter #(= (get % i) l) wordset)) rows))

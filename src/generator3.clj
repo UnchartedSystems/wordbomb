@@ -2,20 +2,7 @@
   (:require [utilities :as u]
             [solver4 :as s4]))
 
-#_[[1]
-   [0 4]
-   [2]
-   [3 1]
-   [0]
-   [2 4]
-   [3]
-   [0 1]
-   [4]
-   [2 3]
-   [0]
-   [1 4]
-   [2]]
-
+#_[[1] [0 4] [2] [3 1] [0] [2 4] [3] [0 1] [4] [2 3] [0] [1 4] [2]]
 ;; NOTE: method of generating:
 ;;       entry by entry, based on the last two entries
 ;;       letters will have two choices (3 constraints + 1 position)
@@ -69,17 +56,20 @@
         (recur length bottleneck))
       (recur length bottleneck))))
 
-(defn make-puzzle-iter [length bottleneck result]
+
+;; Fully utilizes cpu -> monkey brain tingle meme
+(defn make-puzzle-iter [length bottleneck result n-gens]
   (let [puzzle (generate [(make-row (do-smthng) '())] (dec length))]
+    (swap! n-gens inc)
     (when-not (realized? result)
       (if (not-empty puzzle)
         (if (<= bottleneck (apply min (bottlenecks? puzzle length)))
           (deliver result puzzle)
-          (recur length bottleneck result))
-        (recur length bottleneck result)))))
+          (recur length bottleneck result n-gens))
+        (recur length bottleneck result n-gens)))))
 
 (defn make-puzzle-p [length bottleneck]
-  (let [result (promise)]
-    (future (doall (apply pcalls (repeat u/n-cpu  #(make-puzzle-iter length bottleneck result)))))
-    @result))
-
+  (let [result (promise)
+        n-gens (atom 0)]
+    (future (doall (apply pcalls (repeat u/n-cpu  #(make-puzzle-iter length bottleneck result generations)))))
+    [@result @n-gens]))

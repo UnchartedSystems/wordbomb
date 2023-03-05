@@ -3,7 +3,8 @@
             [generator3 :as g3]
             [clojure.string :as str]
             [utilities :as u]
-            [clojure.data.int-map :as i]))
+            [clojure.data.int-map :as i]
+            [clojure.term.colors  :as c]))
 
 ;; NOTE: Planned Improvements:
 ;;        - Good Rule Checker + Feedback
@@ -49,6 +50,20 @@
 
 ;; NOTE: - Astericks around preset letters!
 
+
+(defn- !help []
+  (mapv #(apply pl %)
+   (partition 2
+     '("!rules" "- learn how Letterknot is played"
+       "!quit"  "- abandon the puzzle & quit Letterknot"
+       "!clear" "- erase the word on the selected row"
+       "!reset" "- erase all rows & return the puzzle to a clean slate"
+       "!new"   "- abandon the puzzle & start a new puzzle"
+       "!show"  "- shows the puzzle in its current state"
+       "!info"  "- shows information about the puzzle"
+       "!hint"  "- get a hint based on the current state of the puzzle"
+       "!solve" "- solves the puzzle using its current state, if possible"))))
+
 (defn- row->str [rows links words i pos]
   (apply str (if (= i pos) " >> " "    ")
          (interpose " "
@@ -84,7 +99,7 @@
 (defn game
   ([] (pl "\n"
           "----------" "\n"
-          "Letterknot" "\n"
+          (c/white "Letterknot") "\n"
           "----------" "\n")
    (game true))
   ([_]
@@ -100,10 +115,18 @@
            (= i "4") (game 10 2 (str "\nIMPOSSIBLE Selected! \n"
                                      "ψ(｀∇´)ψ HAHAHAHAHAHAHA"))
            :else ((pl "\n Bad input! Try again \n") (game true)))))
+  ;; TODO: make 'generating...' only appear after a set time, like 5seconds
   ([length bottleneck message]
    (pl message)
-   (pl "\ngenerating...")
-   (game (g3/make-puzzle-p length bottleneck) "generated!\n"))
+   (pl "\ngenerating... ")
+   (let [t-before (. System nanoTime)
+         [puzzle n-gens] (g3/make-puzzle-p length bottleneck)
+         t-after (. System nanoTime)
+         t (str (int (/ (- t-after t-before) 1000000.0)))
+         gen-message   (str"Generated, solved, & analyzed " n-gens " puzzles in " t "ms!\n" )
+         next-message "All that to find the perfect puzzle for you <3\n"]
+     (print gen-message)
+     (game puzzle next-message)))
   ([puzzle message]
    (pl message)
    (game-loop (u/split-puzzle puzzle))))

@@ -7,9 +7,7 @@
             [generator2 :as g2]
             [generator3 :as g3]
             [taoensso.tufte :refer (defnp p profiled profile add-basic-println-handler!)]
-            #_[clj-async-profiler.core :as flame]
-
-            [utilities :as utils]))
+            ))
 
 (def input [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C] ])
 (def classic [[4 \P] [2 0] [1 \N] [3 4] [0 \F] [1 2] [3 \C] [0 4] [2 \A]])
@@ -20,13 +18,10 @@
 ;; puzzle
 
 
-;; (flame/profile (dotimes [_ 5] (solutions input utils/all-words)))
-;; (flame/serve-ui 8080)
 (add-basic-println-handler! {})
 (profile
  {}
    (dotimes [_ 30]
-     #_(p :s3-old        (s3/solutions input u/all-words))
-     #_(p :s4-accept     (s4/solutions input u/all-words))
-     #_(p :s4-reject     (s4/solutions bad u/core-words))
-     ))
+     (p :pmake (g3/make-puzzle-p 6 4)))
+   (dotimes [_ 30]
+     (p :make (g3/make-puzzle 6 4))))
