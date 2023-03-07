@@ -98,7 +98,7 @@
   ([[rows links]]
    (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
   ([rows links words pos show?]
-   (pl "\n")
+   (pl)
    (when show? (represent rows links words pos))
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
@@ -127,8 +127,8 @@
              ;; ( rows links i words)
 
              :else (if-not (= 5 (count i))
-                     (pl-do "Words must be 5 letters long."             "\n"
-                            "Commands are prefaced with !"              "\n"
+                     (pl-do "Words must be 5 letters long." "\n"
+                            "Commands are prefaced with !"  "\n"
                             "enter !help to see all available commands"
                             (recur rows links words pos false))
                      (if-not (apply distinct? i u/all-words)
@@ -143,9 +143,9 @@
 
 (defn game
   ([] (pl "\n"
-          "----------"            "\n"
-          (c/white "Letterknot")  "\n"
-          "----------"            "\n")
+          "----------" "\n"
+          (c/white "Letterknot") "\n"
+          "----------" "\n")
    (game true))
 
   ([_]
@@ -172,7 +172,7 @@
          t-after (. System nanoTime)
          t (str (int (/ (- t-after t-before) 1000000.0)))
          gen-message   (str"Generated, solved, & analyzed " n-gens " puzzles in " t "ms!\n" )
-         next-message "All that to find the perfect puzzle for you <3\n"]
+         next-message "All that to find the perfect puzzle for you <3"]
      (print gen-message)
      (game puzzle next-message)))
 
