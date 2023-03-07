@@ -25,7 +25,11 @@
 ;;               - Info
 ;;
 
+;; NOTE: player specific utilities for fast printing
 (def pl println)
+(defmacro pl-do [& args]
+  `(do (println (str ~@(drop-last args)))
+       ~(last args)))
 
 
 ;; NOTE: Game loop
@@ -51,18 +55,21 @@
 ;; NOTE: - Astericks around preset letters!
 
 
+
 (defn- !help []
+  (pl "PICK ROW USING NUM TEXT")
   (mapv #(apply pl %)
    (partition 2
      '("!rules" "- learn how Letterknot is played"
-       "!quit"  "- abandon the puzzle & quit Letterknot"
+       "!show"  "- shows the puzzle in its current state"
        "!clear" "- erase the word on the selected row"
        "!reset" "- erase all rows & return the puzzle to a clean slate"
-       "!new"   "- abandon the puzzle & start a new puzzle"
-       "!show"  "- shows the puzzle in its current state"
-       "!info"  "- shows information about the puzzle"
+       "!info"  "- shows information about the current puzzle"
        "!hint"  "- get a hint based on the current state of the puzzle"
-       "!solve" "- solves the puzzle using its current state, if possible"))))
+       "!solve" "- solves the puzzle using its current state, if possible"
+       "!new"   "- abandon the puzzle & start a new puzzle"
+       "!quit"  "- abandon the puzzle & quit Letterknot"
+       ))))
 
 (defn- row->str [rows links words i pos]
   (apply str (if (= i pos) " >> " "    ")
@@ -90,32 +97,74 @@
 
 (defn- game-loop
   ([[rows links]]
-   (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0))
-  ([rows links words pos]
-   (represent rows links words pos)
-   ()))
+   (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
+  ([rows links words pos show?]
+   (when show? (represent rows links words pos))
+   (when-let [raw-input (read-line)]
+     (let [i (str/upper-case raw-input)]
+       (cond (= "" i)         (recur rows links words pos false)
+             (= (first i) \!) (cond (= i "!RULES")  ()
+                                    (= i "!SHOW")   ()
+                                    (= i "!CLEAR")  ()
+                                    (= i "!RESET")  ()
+                                    (= i "!HELP")   (do (!help) (recur rows links words pos true))
+                                    (= i "!INFO")   ()
+                                    (= i "!HINT")   ()
+                                    (= i "!SOLVE")  ()
+                                    (= i "!NEW")    ()
+                                    (= i "!QUIT")   ()
+                                    :else           (pl-do "Command: " i " not recognized." "\n"
+                                                           "Use !help to see all available commands"
+                                                           (recur rows links words pos false)))
+
+             (every? #(Character/isDigit %) i) (let [n (read-string i)]
+                                                 (if (and (<= n (count rows)) (> n 0))
+                                                   (recur rows links words (dec n) true)
+                                                   (pl-do "Row " n " does not exist." "\n"
+                                                          "You can switch to Rows 1 - " (count rows)
+                                                          (recur rows links words pos false))))
+             ;; (is-word)
+             ;; ( rows links i words)
+
+             :else (if-not (= 5 (count i))
+                     (pl-do "Words must be 5 letters long."             "\n"
+                            "Commands are prefaced with !"              "\n"
+                            "enter !help to see all available commands"
+                            (recur rows links words pos false))
+                     (if-not (apply distinct? i u/all-words)
+                       (pl-do i " is not a word Letterknot recognizes" "\n"
+                              (recur rows links words pos false))
+                       (if (is-word-legal? i rows links words pos)
+                         (do-pl "True"
+                                (recur rows links (assoc words pos i) pos true)) ;; TODO: if win win, get rules feedback, other stuff!
+                         (do-pl "Word not valid"
+                                (recur rows links words pos true))
+))
+
+             )))))
 
 
 (defn game
   ([] (pl "\n"
-          "----------" "\n"
-          (c/white "Letterknot") "\n"
-          "----------" "\n")
+          "----------"            "\n"
+          (c/white "Letterknot")  "\n"
+          "----------"            "\n")
    (game true))
 
   ([_]
-   (pl "New game! Choose difficulty:" "\n"
-       "Easy / Medium / Hard / Custom")
-   (pl "Enter either 1/2/3/c: ")
-   (let [i (str/upper-case (read-line))]
-     (cond (= i "1") (game 4 6 "\nEasy Selected! Have fun :D")
-           (= i "2") (game 5 5 "\nMedium Selected! Good luck ;)")
-           (= i "3") (game 6 4 "\nHard Selected! Fat Chance >:D")
-           (= i "C") (game 5 5 "\nCustom games are a WIP")
-           (= i "Q") (pl "\n Quitting Game! \n")
-           (= i "4") (game 10 2 (str "\nIMPOSSIBLE Selected! \n"
-                                     (c/red "ψ(｀∇´)ψ HAHAHAHAHAHAHA")))
-           :else ((pl "\n Bad input! Try again \n") (game true)))))
+   (pl "New game! Choose difficulty:"   "\n"
+       "Easy / Medium / Hard / Custom"  "\n"
+       "Enter either 1/2/3/c: ")
+   (when-let [raw-input (read-line)]
+     (let [i (str/upper-case raw-input)]
+       (cond (= i "1") (game 4 6 "\nEasy Selected! Have fun :D")
+             (= i "2") (game 5 5 "\nMedium Selected! Good luck ;)")
+             (= i "3") (game 6 4 "\nHard Selected! Fat Chance >:D")
+             (= i "C") (game 5 5 "\nCustom games are a WIP")
+             (= i "Q") (pl "\n Quitting Game! \n")
+             (= i "4") (game 10 2 (str "\nIMPOSSIBLE Selected! \n"
+                                       (c/red "ψ(｀∇´)ψ HAHAHAHAHAHAHA")))
+             :else ((pl "\n Bad input! Try again \n") (game true))))))
 
   ;; TODO: make 'generating...' only appear after a set time, like 5seconds
   ([length bottleneck message]
