@@ -24,14 +24,6 @@
 ;;               - Replay
 ;;               - Info
 ;;
-
-;; NOTE: player specific utilities for fast printing
-(def pl println)
-(defmacro pl-do [& args]
-  `(do (println (str ~@(drop-last args)))
-       ~(last args)))
-
-
 ;; NOTE: Game loop
 ;;        - Show representation of board!
 ;;          - Player position
@@ -51,10 +43,14 @@
 ; FOR i in range 5:
 ;   if i = link -> "|"
 ;   else: " "
-
 ;; NOTE: - Astericks around preset letters!
 
 
+;; NOTE: player specific utilities for fast printing
+(def pl println)
+(defmacro pl-do [& args]
+  `(do (println (str ~@(drop-last args)))
+       ~(last args)))
 
 (defn- !help []
   (pl "PICK ROW USING NUM TEXT")
@@ -95,10 +91,14 @@
     (mapv pl (interleave link-strs row-strs))))
 
 
+(defn is-word-legal? [& args]
+  true)
+
 (defn- game-loop
   ([[rows links]]
    (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
   ([rows links words pos show?]
+   (pl "\n")
    (when show? (represent rows links words pos))
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
@@ -135,13 +135,10 @@
                        (pl-do i " is not a word Letterknot recognizes" "\n"
                               (recur rows links words pos false))
                        (if (is-word-legal? i rows links words pos)
-                         (do-pl "True"
+                         (pl-do "True"
                                 (recur rows links (assoc words pos i) pos true)) ;; TODO: if win win, get rules feedback, other stuff!
-                         (do-pl "Word not valid"
-                                (recur rows links words pos true))
-))
-
-             )))))
+                         (pl-do "Word not valid"
+                                (recur rows links words pos true))))))))))
 
 
 (defn game
@@ -162,7 +159,7 @@
              (= i "3") (game 6 4 "\nHard Selected! Fat Chance >:D")
              (= i "C") (game 5 5 "\nCustom games are a WIP")
              (= i "Q") (pl "\n Quitting Game! \n")
-             (= i "4") (game 10 2 (str "\nIMPOSSIBLE Selected! \n"
+             (= i "4") (game 10 2 (str "\nIMPOSSIBLE Selected! \n" ;NOTE: make it saucy for 4
                                        (c/red "ψ(｀∇´)ψ HAHAHAHAHAHAHA")))
              :else ((pl "\n Bad input! Try again \n") (game true))))))
 
