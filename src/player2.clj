@@ -94,6 +94,17 @@
 (defn is-word-legal? [& args]
   true)
 
+(defn word-valid? [word]
+  (if-not (= 5 (count word))
+    [false
+     (str "Words must be 5 letters long." "\n"
+          "Commands are prefaced with !"  "\n"
+          "enter !help to see all available commands")]
+    (if-not (apply distinct? word u/all-words)
+      [false
+       (str word " is not a word Letterknot recognizes" "\n")]
+      [true "You shouldn't see this string (is-word-compatible?)"])))
+
 (defn- game-loop
   ([[rows links]]
    (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
@@ -126,19 +137,10 @@
              ;; (is-word)
              ;; ( rows links i words)
 
-             :else (if-not (= 5 (count i))
-                     (pl-do "Words must be 5 letters long." "\n"
-                            "Commands are prefaced with !"  "\n"
-                            "enter !help to see all available commands"
-                            (recur rows links words pos false))
-                     (if-not (apply distinct? i u/all-words)
-                       (pl-do i " is not a word Letterknot recognizes" "\n"
-                              (recur rows links words pos false))
-                       (if (is-word-legal? i rows links words pos)
-                         (pl-do "True"
-                                (recur rows links (assoc words pos i) pos true)) ;; TODO: if win win, get rules feedback, other stuff!
-                         (pl-do "Word not valid"
-                                (recur rows links words pos true))))))))))
+             :else (let [[result message] (word-valid? i)]
+                     (if-not result
+                       (pl-do message (recur rows links words pos false))
+                       (let [[result message] (puzzle-legal? )])))))))
 
 
 (defn game
