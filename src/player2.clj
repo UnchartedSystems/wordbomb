@@ -47,6 +47,7 @@
 
 
 ;; NOTE: player specific utilities for fast printing
+;; NOTE: NEW IDEA TODO: seperate file for errors / strings fns with color
 (def pl println)
 (defmacro pl-do [& args]
   `(do (println (str ~@(drop-last args)))
@@ -71,13 +72,14 @@
   (apply str (if (= i pos) " >> " "    ")
          (interpose " "
          (if-some [word (get words i)]
-           '(word)
+           word
            (mapv (fn [n]
                    (cond
                      (= (nth (get rows i) 0) n) (nth (get rows i) 1)
                      (and (some #(= n %) (get links (dec i))) (get (get words (dec i)) n)) (get (get words (dec i)) n)
                      (and (some #(= n %) (get links i)) (get (get words i) n)) (get (get words (dec i)) n)
                      :else "_")) '(0 1 2 3 4))))))
+
 
 (defn- link->str [links i]
   (apply str "    "
@@ -90,20 +92,50 @@
     (pl row-str)
     (mapv pl (interleave link-strs row-strs))))
 
+;; NOTE: Things to check for:
+;;        - Word conflicts with preset letter
+;;        - Word letters != linked +/-1 word letters
+;;        - Linked word letters = with +/-2 row letters
+;;          -
 
-(defn is-word-legal? [& args]
-  true)
+;; NOTE: Can do word+/-2 with this by creating "  L  " out of letter & pos
+;;        or not... if I want to do advanced feedback
+;;        will make this bad for now, later have to iterate per '(0 1 2 3 4) -> letter
+;;        this means taking the position of rows for error feedback, instead of the data
+;;        also need to take preset letter
+(defn- adj-legal? [word adj-word links]
+  (when adj-word
+    (println adj-word)
+    (every? true? (mapv #(not= (get word %) (get adj-word %)) links))))
 
-(defn word-valid? [word]
+(defn- word-legal? [rows links words key]
+  [true words]
+  (let [word          (get words key)
+        [pos letter]  (get rows key)
+        word-letter   (get word pos)
+        links+1       (get links pos)
+        links-1       (get links (dec pos))
+        word+1        (get words (inc pos))
+        word-1        (get words (dec pos))
+        word+2        (get words (+ pos 2))
+        word-2        (get words (- pos 2))]
+    (cond (not= word-letter letter) [false (str "Letter " (inc pos) " of "
+                                                word ": '" word-letter
+                                                "' does not match '" letter "'")]
+          (adj-legal? word word+1 links+1) [false "adj row +1 is incompatible"]
+          (adj-legal? word word-1 links-1) [false "adj row -1 is incompatible"]
+
+          :else [true "Error on handling 'word-legal?' return"])))
+
+(defn- is-word? [word]
   (if-not (= 5 (count word))
     [false
      (str "Words must be 5 letters long." "\n"
           "Commands are prefaced with !"  "\n"
           "enter !help to see all available commands")]
-    (if-not (apply distinct? word u/all-words)
-      [false
-       (str word " is not a word Letterknot recognizes" "\n")]
-      [true "You shouldn't see this string (is-word-compatible?)"])))
+    (if (apply distinct? word u/all-words)
+      [false (str word " is not a word Letterknot recognizes" "\n")]
+      [true "Error on handling 'is-word?' return"])))
 
 (defn- game-loop
   ([[rows links]]
@@ -115,8 +147,8 @@
      (let [i (str/upper-case raw-input)]
        (cond (= "" i)         (recur rows links words pos false)
              (= (first i) \!) (cond (= i "!RULES")  ()
-                                    (= i "!SHOW")   ()
-                                    (= i "!CLEAR")  ()
+                                    (= i "!SHOW")   (recur rows links words pos true)
+                                    (= i "!CLEAR")  (recur rows links (dissoc words pos) pos true)
                                     (= i "!RESET")  ()
                                     (= i "!HELP")   (do (!help) (recur rows links words pos true))
                                     (= i "!INFO")   ()
@@ -137,10 +169,14 @@
              ;; (is-word)
              ;; ( rows links i words)
 
-             :else (let [[result message] (word-valid? i)]
+             :else (let [[result message] (is-word? i)]
                      (if-not result
                        (pl-do message (recur rows links words pos false))
-                       (let [[result message] (puzzle-legal? )])))))))
+                       (let [new-words        (assoc words pos i)
+                             [result message] (word-legal? rows links new-words pos)]
+                         (if result
+                           (recur rows links new-words pos true)
+                           (pl-do message (recur rows links words pos false)))))))))))
 
 
 (defn game
