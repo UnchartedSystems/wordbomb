@@ -1,8 +1,8 @@
 (ns player2
-  (:require [utilities :as utils]
-            [generator3 :as g3]
+  (:require [utilities :as u]
+            [text :as t]
+            [generator3 :as g]
             [clojure.string :as str]
-            [utilities :as u]
             [clojure.data.int-map :as i]
             [clojure.term.colors  :as c]))
 
@@ -125,17 +125,14 @@
           (adj-legal? word word+1 links+1) [false "adj row +1 is incompatible"]
           (adj-legal? word word-1 links-1) [false "adj row -1 is incompatible"]
 
-          :else [true "Error on handling 'word-legal?' return"])))
+          :else [true (t/error-if-seen "word-legal?")])))
 
 (defn- is-word? [word]
   (if-not (= 5 (count word))
-    [false
-     (str "Words must be 5 letters long." "\n"
-          "Commands are prefaced with !"  "\n"
-          "enter !help to see all available commands")]
+    [false t/bad-word-len]
     (if (apply distinct? word u/all-words)
-      [false (str word " is not a word Letterknot recognizes" "\n")]
-      [true "Error on handling 'is-word?' return"])))
+      [false (t/unrecognized-word word)]
+      [true (t/error-if-seen "is-word?")])))
 
 (defn- game-loop
   ([[rows links]]
@@ -156,15 +153,13 @@
                                     (= i "!SOLVE")  ()
                                     (= i "!NEW")    ()
                                     (= i "!QUIT")   ()
-                                    :else           (pl-do "Command: " i " not recognized." "\n"
-                                                           "Use !help to see all available commands"
+                                    :else           (pl-do (t/bad-command i)
                                                            (recur rows links words pos false)))
 
              (every? #(Character/isDigit %) i) (let [n (read-string i)]
                                                  (if (and (<= n (count rows)) (> n 0))
                                                    (recur rows links words (dec n) true)
-                                                   (pl-do "Row " n " does not exist." "\n"
-                                                          "You can switch to Rows 1 - " (count rows)
+                                                   (pl-do (t/bad-row-# n (count rows))
                                                           (recur rows links words pos false))))
              ;; (is-word)
              ;; ( rows links i words)
@@ -180,39 +175,34 @@
 
 
 (defn game
-  ([] (pl "\n"
-          "----------" "\n"
-          (c/white "Letterknot") "\n"
-          "----------" "\n")
+  ([]
+   (pl t/letterknot)
    (game true))
 
   ([_]
-   (pl "New game! Choose difficulty:"   "\n"
-       "Easy / Medium / Hard / Custom"  "\n"
-       "Enter either 1/2/3/c: ")
+   (pl t/difficulty)
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
-       (cond (= i "1") (game 4 6 "\nEasy Selected! Have fun :D")
-             (= i "2") (game 5 5 "\nMedium Selected! Good luck ;)")
-             (= i "3") (game 6 4 "\nHard Selected! Fat Chance >:D")
-             (= i "C") (game 5 5 "\nCustom games are a WIP")
-             (= i "Q") (pl "\n Quitting Game! \n")
-             (= i "4") (game 10 2 (str "\nIMPOSSIBLE Selected! \n" ;NOTE: make it saucy for 4
-                                       (c/red "ψ(｀∇´)ψ HAHAHAHAHAHAHA")))
-             :else ((pl "\n Bad input! Try again \n") (game true))))))
+       (cond (= i "1") (game 4 6 t/easy)
+             (= i "2") (game 5 5 t/normal)
+             (= i "3") (game 6 4 t/hard)
+             (= i "C") (game 5 5 t/custom)
+             (= i "4") (game 10 2 t/impossible)
+             (= i "Q") (pl t/quit)
+             :else     (pl-do t/bad-input (game true))))))
 
   ;; TODO: make 'generating...' only appear after a set time, like 5seconds
   ([length bottleneck message]
    (pl message)
-   (pl "\ngenerating... ")
+   #_(pl t/generating)
    (let [t-before (. System nanoTime)
-         [puzzle n-gens] (g3/make-puzzle-p length bottleneck)
+         [puzzle n-gens] (g/make-puzzle-p length bottleneck)
          t-after (. System nanoTime)
          t (str (int (/ (- t-after t-before) 1000000.0)))
-         gen-message   (str"Generated, solved, & analyzed " n-gens " puzzles in " t "ms!\n" )
-         next-message "All that to find the perfect puzzle for you <3"]
-     (print gen-message)
-     (game puzzle next-message)))
+         gen-message  (t/generated n-gens t)
+         ]
+     (pl gen-message)
+     (game puzzle t/post-gen)))
 
   ([puzzle message]
    (pl message)
