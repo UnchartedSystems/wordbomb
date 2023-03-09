@@ -92,24 +92,12 @@
     (pl row-str)
     (mapv pl (interleave link-strs row-strs))))
 
-;; NOTE: Things to check for:
-;;        - Word conflicts with preset letter
-;;        - Word letters != linked +/-1 word letters
-;;        - Linked word letters = with +/-2 row letters
-;;          -
 
-;; NOTE: Can do word+/-2 with this by creating "  L  " out of letter & pos
-;;        or not... if I want to do advanced feedback
-;;        will make this bad for now, later have to iterate per '(0 1 2 3 4) -> letter
-;;        this means taking the position of rows for error feedback, instead of the data
-;;        also need to take preset letter
-(defn- adj-legal? [word adj-word links]
-  (when adj-word
-    (println adj-word)
-    (every? true? (mapv #(not= (get word %) (get adj-word %)) links))))
 
-(defn- word-legal? [rows links words key]
-  [true words]
+
+
+#_(defn- word-legal? [rows links words key]
+  #_[true words]
   (let [word          (get words key)
         [pos letter]  (get rows key)
         word-letter   (get word pos)
@@ -117,14 +105,57 @@
         links-1       (get links (dec pos))
         word+1        (get words (inc pos))
         word-1        (get words (dec pos))
-        word+2        (get words (+ pos 2))
-        word-2        (get words (- pos 2))]
+        word+2        (get words (+ pos 2))]
     (cond (not= word-letter letter) [false (str "Letter " (inc pos) " of "
                                                 word ": '" word-letter
                                                 "' does not match '" letter "'")]
           (adj-legal? word word+1 links+1) [false "adj row +1 is incompatible"]
           (adj-legal? word word-1 links-1) [false "adj row -1 is incompatible"]
 
+          :else [true (t/error-if-seen "word-legal?")])))
+
+;; NOTE: Things to check for:
+;;        - Word conflicts with preset letter
+;;        - Word letters != linked +/-1 word letters
+;;        - Linked word letters = with +/-2 row letters
+;; NOTE: Can do word+/-2 with this by creating "  L  " out of letter & pos
+;;        or not... if I want to do advanced feedback
+;;        will make this bad for now, later have to iterate per '(0 1 2 3 4) -> letter
+;;        this means taking the position of rows for error feedback, instead of the data
+;;        also need to take preset letter
+
+
+;; NOTE: still needs to check word against row!
+(defn adj-row-legal? [word links words og-i adj-i]
+  (let [adj-word      (get words adj-i)
+        [link1 link2] (get links (min og-i adj-i))]
+    (if-not adj-word
+      [true (t/error-if-seen "adj-row-legal?")]
+      (loop [l 0
+             letters '(1 2 3 4)]
+        (let [linked? (or (= link1 l) (= link2 l))
+              word-l  (get word l)
+              adj-l   (get adj-word l)]
+          (cond (and linked? (not= word-l adj-l))
+                [false (t/unmatched-linked l word adj-word word-l adj-l og-i adj-i)]
+                (and (not linked?) (= word-l adj-l))
+                (do (pl "unlinked: " word-l adj-l linked? l)
+                [false (t/matched-unlinked l word adj-word word-l adj-l og-i adj-i)])
+                :else (if-let [l (first letters)]
+                        (recur l (rest letters))
+                        [true (t/error-if-seen "adj-row-legal?")])))))))
+
+(not= \b \b)
+
+(defn- word-legal? [rows links words r-pos]
+  (let [word            (get words r-pos)
+        [l-pos letter]  (get rows r-pos)
+        w-letter        (get word l-pos)
+        adj+1           (adj-row-legal? word links words r-pos (inc r-pos))
+        adj-1           (adj-row-legal? word links words r-pos (dec r-pos))]
+    (cond (not= w-letter letter) [false (t/letter-mismatch l-pos word w-letter letter)]
+          (not (first adj+1)) adj+1
+          (not (first adj-1)) adj-1
           :else [true (t/error-if-seen "word-legal?")])))
 
 (defn- is-word? [word]
@@ -187,9 +218,10 @@
              (= i "2") (game 5 5 t/normal)
              (= i "3") (game 6 4 t/hard)
              (= i "C") (game 5 5 t/custom)
-             (= i "4") (game 10 2 t/impossible)
+             (= i "4") (game 9 2 t/impossible)
              (= i "Q") (pl t/quit)
-             :else     (pl-do t/bad-input (game true))))))
+             :else     (pl-do t/bad-input
+                              (game true))))))
 
   ;; TODO: make 'generating...' only appear after a set time, like 5seconds
   ([length bottleneck message]
@@ -199,13 +231,12 @@
          [puzzle n-gens] (g/make-puzzle-p length bottleneck)
          t-after (. System nanoTime)
          t (str (int (/ (- t-after t-before) 1000000.0)))
-         gen-message  (t/generated n-gens t)
-         ]
-     (pl gen-message)
-     (game puzzle t/post-gen)))
+         gen-message  (t/generated n-gens t)]
+     (pl-do gen-message
+            (game puzzle t/post-gen))))
 
   ([puzzle message]
-   (pl message)
-   (game-loop (u/split-puzzle puzzle))))
+   (pl-do message
+          (game-loop (u/split-puzzle puzzle)))))
 
 (game)

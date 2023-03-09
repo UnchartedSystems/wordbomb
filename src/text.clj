@@ -11,6 +11,23 @@
   (str "Error on handling '" func "' return"))
 
 ;; Word & Puzzle Validation
+; word-legal?
+(defn letter-mismatch [pos word word-letter letter]
+  (str "Letter " (inc pos) " of "
+       word ": '" word-letter
+       "' does not match '" letter "'"))
+
+(defn unmatched-linked [i word adj-word word-l adj-l og-pos adj-pos]
+  (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
+       ": '" word-l "' must match linked '" adj-l
+       "' in " adj-word " on row " (inc adj-pos) "."))
+
+(defn matched-unlinked [i word adj-word word-l adj-l og-pos adj-pos]
+  (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
+       ": '" word-l "' must not match unlinked '" adj-l
+       "' in " adj-word " on row " (inc adj-pos) "."))
+
+; is-word?
 (def bad-word-len (str "Words must be 5 letters long." "\n"
                        "Commands are prefaced with !"  "\n"
                        "enter !help to see all available commands"))
