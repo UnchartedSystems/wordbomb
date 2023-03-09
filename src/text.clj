@@ -10,6 +10,8 @@
 (defn error-if-seen [func]
   (str "Error on handling '" func "' return"))
 
+(def goodbye (str "Thank you for playing!"))
+
 ;; Word & Puzzle Validation
 ; word-legal?
 (defn letter-mismatch [pos word word-letter letter]
@@ -17,20 +19,32 @@
        word ": '" word-letter
        "' does not match '" letter "'"))
 
-(defn unmatched-linked [i word adj-word word-l adj-l og-pos adj-pos]
-  (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
-       ": '" word-l "' must match linked '" adj-l
-       "' in " adj-word " on row " (inc adj-pos) "."))
+(defn unmatched-linked
+  ([i word word-l adj-l og-pos adj-pos]
+   (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
+        ": '" word-l "' must match linked '" adj-l
+        "' on row " (inc adj-pos) "."))
 
-(defn matched-unlinked [i word adj-word word-l adj-l og-pos adj-pos]
-  (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
-       ": '" word-l "' must not match unlinked '" adj-l
-       "' in " adj-word " on row " (inc adj-pos) "."))
+  ([i word adj-word word-l adj-l og-pos adj-pos]
+   (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
+        ": '" word-l "' must match linked '" adj-l
+        "' in " adj-word " on row " (inc adj-pos) ".")))
+
+(defn matched-unlinked
+  ([i word  word-l adj-l og-pos adj-pos]
+   (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
+        ": '" word-l "' must not match unlinked '" adj-l
+        "' on row " (inc adj-pos) "."))
+
+  ([i word adj-word word-l adj-l og-pos adj-pos]
+   (str "Letter " (inc i) " of " word  " on row " (inc og-pos)
+        ": '" word-l "' must not match unlinked '" adj-l
+        "' in " adj-word " on row " (inc adj-pos) ".")))
 
 ; is-word?
 (def bad-word-len (str "Words must be 5 letters long." "\n"
                        "Commands are prefaced with !"  "\n"
-                       "enter !help to see all available commands"))
+                       "enter !help to see all commands"))
 
 (defn unrecognized-word [!word]
   (str !word " is not a word Letterknot recognizes" "\n"))
@@ -60,6 +74,8 @@
 (def easy   "\nEasy Selected! Have fun :D")
 (def normal "\nMedium Selected! Good luck ;)")
 (def hard   "\nHard Selected! Fat Chance >:D")
+(def debug   (str "\nDebug Selected! \n"
+                  "me no likey brain hurty :/"))
 (def custom "\nCustom games are a WIP")
 (def impossible (str "\nIMPOSSIBLE Selected! \n"
                      (c/red "ψ(｀∇´)ψ HAHAHAHAHAHAHA")))

@@ -7,14 +7,6 @@
             [clojure.term.colors  :as c]))
 
 ;; NOTE: Planned Improvements:
-;;        - Good Rule Checker + Feedback
-;;        - Responsive Links (letters on next row)
-;;        - New commands!
-;;            - !new: start new game
-;;            - !help: lists all commands
-;;            - !info: Shows # of solutions & bottleneck
-;;            - !solve: Retrieves solution using entered words if any
-;;        - bug fix: if row-num > # of rows , throw feedback
 ;;        - On winning a game!
 ;;            - Show congratz,
 ;;            - Then show # of unique letters out of possible
@@ -70,6 +62,7 @@
 (defn- represent [rows links words pos]
   (let [[row-str & row-strs]   (mapv #(row->str rows links words % pos) (range (count rows)))
         link-strs  (mapv #(link->str links %) (range (count links)))]
+    (pl "\n")
     (pl row-str)
     (mapv pl (interleave link-strs row-strs))))
 
@@ -118,6 +111,7 @@
           (not (first adj-1)) adj-1
           :else [true (t/error-if-seen "word-legal?")])))
 
+
 (defn- is-word? [word]
   (if-not (= 5 (count word))
     [false t/bad-word-len]
@@ -125,11 +119,20 @@
       [false (t/unrecognized-word word)]
       [true (t/error-if-seen "is-word?")])))
 
+(defn get-next-pos [pos rows words]
+  (let [rows   (doall (range (count rows)))
+        filled (keys words)
+        rows-left (filterv #(apply distinct? % filled) rows)]
+    (if (empty? rows-left)
+      false
+      (if-let [next (some #(when (<= % pos) %) rows-left)]
+        next
+        (first rows-left)))))
+
 (defn- game-loop
   ([[rows links]]
    (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
   ([rows links words pos show?]
-   (pl)
    (when show? (represent rows links words pos))
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
@@ -137,12 +140,13 @@
              (= (first i) \!) (cond (= i "!RULES")  ()
                                     (= i "!SHOW")   (recur rows links words pos true)
                                     (= i "!CLEAR")  (recur rows links (dissoc words pos) pos true)
-                                    (= i "!RESET")  ()
+                                    (= i "!RESET")  (recur rows links (i/int-map) pos true)
+                                    (= i "!UNDO")   ()
                                     (= i "!HELP")   (do (!help) (recur rows links words pos true))
                                     (= i "!INFO")   ()
                                     (= i "!HINT")   ()
                                     (= i "!SOLVE")  ()
-                                    (= i "!NEW")    ()
+                                    (= i "!NEW")    :new-game
                                     (= i "!QUIT")   ()
                                     :else           (pl-do (t/bad-command i)
                                                            (recur rows links words pos false)))
@@ -155,15 +159,21 @@
              ;; (is-word)
              ;; ( rows links i words)
 
-             :else (let [[result message] (is-word? i)]
-                     (if-not result
-                       (pl-do message (recur rows links words pos false))
+             :else (let [[word? feedback] (is-word? i)]
+                     (if-not word?
+                       (pl-do feedback (recur rows links words pos false))
                        (let [new-words        (assoc words pos i)
-                             [result message] (word-legal? rows links new-words pos)]
-                         (if result
-                           (recur rows links new-words pos true)
-                           (pl-do message (recur rows links words pos false)))))))))))
+                             [legal? feedback] (word-legal? rows links new-words pos)]
+                         (if-not legal?
+                           (pl-do feedback (recur rows links words pos false))
+                             (if-let [next-pos (get-next-pos pos rows new-words)]
+                               (recur rows links new-words next-pos true)
+                               (do (represent rows links new-words pos)
+                                   (pl "YOU WIN")
+                                   (identity :quit))))))))))))
 
+
+(def bug [[1 \L] [2 3] [4 \T] [0 1] [2 \E] [3 4] [0 \B]])
 
 (defn game
   ([]
@@ -179,6 +189,7 @@
              (= i "3") (game 6 4 t/hard)
              (= i "C") (game 5 5 t/custom)
              (= i "4") (game 9 2 t/impossible)
+             (= i "D") (game 4 35 t/debug)
              (= i "Q") (pl t/quit)
              :else     (pl-do t/bad-input
                               (game true))))))
@@ -193,10 +204,15 @@
          t (str (int (/ (- t-after t-before) 1000000.0)))
          gen-message  (t/generated n-gens t)]
      (pl-do gen-message
-            (game puzzle t/post-gen))))
+            (game bug t/post-gen))))
 
   ([puzzle message]
-   (pl-do message
-          (game-loop (u/split-puzzle puzzle)))))
+   (pl message)
+   (let [ng? (game-loop (u/split-puzzle puzzle))]
+     (cond (= ng? :restart)  (recur puzzle "Restarting!")
+           (= ng? :new-game) (game true)
+           (= ng? :quit)     (pl t/goodbye)
+           :else             (pl t/goodbye)))))
+
 
 (game)
