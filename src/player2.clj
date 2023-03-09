@@ -24,28 +24,6 @@
 ;;               - Replay
 ;;               - Info
 ;;
-;; NOTE: Game loop
-;;        - Show representation of board!
-;;          - Player position
-;;          - Links
-;;          - Rows with PRESET & LINKED Letters filled
-;;          - Rows with WORD
-
-; FOR ROWS:
-; pos = ci? -> '>>' '  '
-; IF: word? -> word
-;    FOR: i in range 5:
-;         When i is in links n,n+1: check: r+1,r-1
-;         When i = r-pos -> r-char
-;         else: "_"
-;
-; FOR LINKS:
-; FOR i in range 5:
-;   if i = link -> "|"
-;   else: " "
-;; NOTE: - Astericks around preset letters!
-
-
 ;; NOTE: player specific utilities for fast printing
 ;; NOTE: NEW IDEA TODO: seperate file for errors / strings fns with color
 (def pl println)
@@ -55,9 +33,12 @@
 
 (defn- !help []
   (pl "PICK ROW USING NUM TEXT")
+  (pl "NOTE: you can also use shorthands like !c !")
+  (pl "use bolded letter to denote shorthand letter")
+  (pl "w + s should move up or down one row")
   (mapv #(apply pl %)
    (partition 2
-     '("!rules" "- learn how Letterknot is played"
+     '("!learn" "- learn how Letterknot is played"
        "!show"  "- shows the puzzle in its current state"
        "!clear" "- erase the word on the selected row"
        "!reset" "- erase all rows & return the puzzle to a clean slate"
@@ -93,27 +74,6 @@
     (mapv pl (interleave link-strs row-strs))))
 
 
-
-
-
-#_(defn- word-legal? [rows links words key]
-  #_[true words]
-  (let [word          (get words key)
-        [pos letter]  (get rows key)
-        word-letter   (get word pos)
-        links+1       (get links pos)
-        links-1       (get links (dec pos))
-        word+1        (get words (inc pos))
-        word-1        (get words (dec pos))
-        word+2        (get words (+ pos 2))]
-    (cond (not= word-letter letter) [false (str "Letter " (inc pos) " of "
-                                                word ": '" word-letter
-                                                "' does not match '" letter "'")]
-          (adj-legal? word word+1 links+1) [false "adj row +1 is incompatible"]
-          (adj-legal? word word-1 links-1) [false "adj row -1 is incompatible"]
-
-          :else [true (t/error-if-seen "word-legal?")])))
-
 ;; NOTE: Things to check for:
 ;;        - Word conflicts with preset letter
 ;;        - Word letters != linked +/-1 word letters
@@ -125,34 +85,34 @@
 ;;        also need to take preset letter
 
 
-;; NOTE: still needs to check word against row!
-(defn adj-row-legal? [word links words og-i adj-i]
+; jesus this is ugly
+; TODO: far rows matching!
+(defn adj-row-legal? [rows links word words og-i adj-i]
   (let [adj-word      (get words adj-i)
+        [row-l-pos row-l] (get rows adj-i)
         [link1 link2] (get links (min og-i adj-i))]
-    (if-not adj-word
-      [true (t/error-if-seen "adj-row-legal?")]
-      (loop [l 0
-             letters '(1 2 3 4)]
+    (loop [l 0 letters '(1 2 3 4)]
+      (if-not l
+        [true (t/error-if-seen "adj-row-legal?")]
         (let [linked? (or (= link1 l) (= link2 l))
               word-l  (get word l)
               adj-l   (get adj-word l)]
-          (cond (and linked? (not= word-l adj-l))
-                [false (t/unmatched-linked l word adj-word word-l adj-l og-i adj-i)]
-                (and (not linked?) (= word-l adj-l))
-                (do (pl "unlinked: " word-l adj-l linked? l)
-                [false (t/matched-unlinked l word adj-word word-l adj-l og-i adj-i)])
-                :else (if-let [l (first letters)]
-                        (recur l (rest letters))
-                        [true (t/error-if-seen "adj-row-legal?")])))))))
-
-(not= \b \b)
+          (if-not adj-word
+            (cond
+              (and linked? (not= word-l row-l) (= row-l-pos l))    [false (t/unmatched-linked l word word-l row-l og-i adj-i)]
+              (and (not linked?) (= word-l row-l) (= row-l-pos l)) [false (t/matched-unlinked l word word-l row-l og-i adj-i)]
+              :else                                                (recur (first letters) (rest letters)))
+            (cond
+              (and linked? (not= word-l adj-l))     [false (t/unmatched-linked l word adj-word word-l adj-l og-i adj-i)]
+              (and (not linked?) (= word-l adj-l))  [false (t/matched-unlinked l word adj-word word-l adj-l og-i adj-i)]
+              :else                                 (recur (first letters) (rest letters)))))))))
 
 (defn- word-legal? [rows links words r-pos]
   (let [word            (get words r-pos)
         [l-pos letter]  (get rows r-pos)
         w-letter        (get word l-pos)
-        adj+1           (adj-row-legal? word links words r-pos (inc r-pos))
-        adj-1           (adj-row-legal? word links words r-pos (dec r-pos))]
+        adj+1           (adj-row-legal? rows links word words r-pos (inc r-pos))
+        adj-1           (adj-row-legal? rows links word words r-pos (dec r-pos))]
     (cond (not= w-letter letter) [false (t/letter-mismatch l-pos word w-letter letter)]
           (not (first adj+1)) adj+1
           (not (first adj-1)) adj-1
