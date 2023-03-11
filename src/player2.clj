@@ -78,6 +78,9 @@
 ;;        also need to take preset letter
 
 
+;; TODO: reduce into semi-composable elements, starting with word-legal?
+
+
 ; jesus this is ugly
 ; TODO: far rows matching!
 (defn adj-row-legal? [rows links word words og-i adj-i]
@@ -111,13 +114,78 @@
           (not (first adj-1)) adj-1
           :else [true (t/error-if-seen "word-legal?")])))
 
+;; NOTE: Things to check for:
+;;        - Word conflicts with preset letter
+;;        - Word letters != linked +/-1 word letters
+;;        - Linked word letters = with +/-2 row letters
+;; NOTE: Can do word+/-2 with this by creating "  L  " out of letter & pos
+;;        or not... if I want to do advanced feedback
+;;        will make this bad for now, later have to iterate per '(0 1 2 3 4) -> letter
+;;        this means taking the position of rows for error feedback, instead of the data
+;;        also need to take preset letter
 
-(defn- is-word? [word]
-  (if-not (= 5 (count word))
-    [false t/bad-word-len]
-    (if (apply distinct? word u/all-words)
-      [false (t/unrecognized-word word)]
-      [true (t/error-if-seen "is-word?")])))
+;; TODO: check for:
+;; Word conflicts with +-1 word
+;;  - Every Letter:   !=/=
+;;  - word link adj-word
+;; Word conflicts with +-1 row
+;;  - Row Letter:     !=
+;;  - word link adj-row
+;; Word conflicts with +-2 word
+;;  - Linked Letters: !=
+;;  - word link adj-word
+;; Word conflicts with +-2 row
+;;  - Linked Letter != Row Letter
+;;  - word link adj-row
+
+(defn per-letter? [word-l adj-l pos-l [l1 l2]]
+  (let [linked? (or (= pos-l l1) (= pos-l l2))]
+    (cond (and linked? (not= word-l adj-l))         (pl-do "FIXME TRUE" false)
+          (and (not linked?) (= word-l adj-l)) (pl-do "FIXME FALSE" false)
+          :else true)))
+
+(defn adj-word?
+  ([word adj-word link]
+   (if-not adj-word true
+           (loop [pos-l 0]
+             (if (>= pos-l 5) true
+                 (let [word-l  (get word pos-l)
+                       adj-l   (get adj-word pos-l)]
+                   (if-not (per-letter? word-l adj-l pos-l link)
+                     false
+                     (recur (inc pos-l)))))))))
+
+(defn- adj-letter?
+  ([word [pos-l letter]]
+   (if-not letter true
+     (let [word-l (get word pos-l)]
+       (if (not= word-l letter) true
+           (pl-do "ADJ-LETTER" false)))))
+  ([word [pos-l letter] [l1 l2]]
+   (if-not letter true
+     (let [word-l (get word pos-l)]
+       (if (and (not= word-l letter)
+                (or (= l1 pos-l)
+                    (= l2 pos-l)))
+         true
+           (pl-do "FAR-LETTER" false))))))
+
+(defn- row-letter? [word rows pos-r]
+  (let [[pos-l letter] (get rows pos-r)
+        word-l        (get word pos-l)]
+    (if (= letter word-l) true
+        (pl-do (t/letter-mismatch pos-l word word-l letter) false))))
+
+(defn- right-size? [input]
+  (if (= 5 (count input)) true
+      (pl-do t/bad-word-len false)))
+
+(defn- is-word? [input]
+  (if-not (apply distinct? input u/all-words) true
+          (pl-do (t/unrecognized-word input) false)))
+
+
+
 
 (defn get-next-pos [pos rows words]
   (let [rows   (doall (range (count rows)))
@@ -156,21 +224,35 @@
                                                    (recur rows links words (dec n) true)
                                                    (pl-do (t/bad-row-# n (count rows))
                                                           (recur rows links words pos false))))
-             ;; (is-word)
-             ;; ( rows links i words)
 
-             :else (let [[word? feedback] (is-word? i)]
-                     (if-not word?
-                       (pl-do feedback (recur rows links words pos false))
-                       (let [new-words        (assoc words pos i)
-                             [legal? feedback] (word-legal? rows links new-words pos)]
-                         (if-not legal?
-                           (pl-do feedback (recur rows links words pos false))
-                             (if-let [next-pos (get-next-pos pos rows new-words)]
-                               (recur rows links new-words next-pos true)
-                               (do (represent rows links new-words pos)
-                                   (pl "YOU WIN")
-                                   (identity :quit))))))))))))
+             (not (right-size? i))                                                (recur rows links words pos false)
+             (not (is-word? i))                                                   (recur rows links words pos false)
+             (not (row-letter? i rows pos))                                       (recur rows links words pos false)
+             (not (adj-letter? i (get rows (inc pos))))                           (recur rows links words pos false)
+             (not (adj-letter? i (get rows (dec pos))))                           (recur rows links words pos false)
+             (not (adj-word? i (get words (inc pos)) (get links pos)))            (recur rows links words pos false)
+             (not (adj-word? i (get words (dec pos)) (get links (dec pos))))      (recur rows links words pos false)
+             (not (adj-letter? i (get rows (+ pos 2)) (get links pos)))           (recur rows links words pos false)
+             (not (adj-letter? i (get rows (- pos 2)) (get links (dec pos))))     (recur rows links words pos false)
+             ;BUG: HACK: TODO: These check for row+-2, but check for linked matches
+             ;                 and unlinked nonmatches! We can't check unlinked nonmatches
+             ;; (not (adj-word? i (get words (+ pos 2)) (get links pos) false))       (recur rows links words pos false)
+             ;; (not (adj-word? i (get words (- pos 2)) (get links (dec pos)) false)) (recur rows links words pos false)
+             :else (recur rows links (assoc words pos i) pos true)
+                   )))))
+
+;; :else (let [[word? feedback] (is-word? i)]
+;;                      (if-not word?
+;;                        (pl-do feedback (recur rows links words pos false))
+;;                        (let [new-words        (assoc words pos i)
+;;                              [legal? feedback] (word-legal? rows links new-words pos)]
+;;                          (if-not legal?
+;;                            (pl-do feedback (recur rows links words pos false))
+;;                              (if-let [next-pos (get-next-pos pos rows new-words)]
+;;                                (recur rows links new-words next-pos true)
+;;                                (do (represent rows links new-words pos)
+;;                                    (pl "YOU WIN")
+;;                                    (identity :quit))))))))))))
 
 
 (def bug [[1 \L] [2 3] [4 \T] [0 1] [2 \E] [3 4] [0 \B]])
