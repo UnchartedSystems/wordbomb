@@ -161,6 +161,12 @@
         next
         (first rows-left)))))
 
+(defn- parse-pos [digits rows]
+  (let [num (read-string digits)]
+    (if (and (<= num (count rows)) (> num 0))
+      (dec num)
+      (pl-do (t/bad-row-# num (count rows)) false))))
+
 (defn- game-loop
   ([[rows links]]
    (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
@@ -183,11 +189,9 @@
                                     :else           (pl-do (t/bad-command i)
                                                            (recur rows links words pos false)))
 
-             (every? #(Character/isDigit %) i) (let [n (read-string i)]
-                                                 (if (and (<= n (count rows)) (> n 0))
-                                                   (recur rows links words (dec n) true)
-                                                   (pl-do (t/bad-row-# n (count rows))
-                                                          (recur rows links words pos false))))
+             (every? #(Character/isDigit %) i) (if-let [new-pos (parse-pos i rows)]
+                                                 (recur rows links words new-pos true)
+                                                 (recur rows links words pos false))
 
              (not (right-size? i))                                                (recur rows links words pos false)
              (not (is-word? i))                                                   (recur rows links words pos false)
