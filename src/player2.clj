@@ -67,44 +67,35 @@
     (mapv pl (interleave link-strs row-strs))))
 
 
-;; NOTE: Things to check for:
-;;        - Word conflicts with preset letter
-;;        - Word letters != linked +/-1 word letters
-;;        - Linked word letters = with +/-2 row letters
-;; NOTE: Can do word+/-2 with this by creating "  L  " out of letter & pos
-;;        or not... if I want to do advanced feedback
-;;        will make this bad for now, later have to iterate per '(0 1 2 3 4) -> letter
-;;        this means taking the position of rows for error feedback, instead of the data
-;;        also need to take preset letter
-
-
-;; TODO: reduce into semi-composable elements, starting with word-legal?
-
-
-
-;; NOTE: Things to check for:
-;;        - Word conflicts with preset letter
-;;        - Word letters != linked +/-1 word letters
-;;        - Linked word letters = with +/-2 row letters
-;; NOTE: Can do word+/-2 with this by creating "  L  " out of letter & pos
-;;        or not... if I want to do advanced feedback
-;;        will make this bad for now, later have to iterate per '(0 1 2 3 4) -> letter
-;;        this means taking the position of rows for error feedback, instead of the data
-;;        also need to take preset letter
-
 ;; TODO: check for:
-;; Word conflicts with +-1 word
-;;  - Every Letter:   !=/=
-;;  - word link adj-word
-;; Word conflicts with +-1 row
-;;  - Row Letter:     !=
-;;  - word link adj-row
-;; Word conflicts with +-2 word
-;;  - Linked Letters: !=
-;;  - word link adj-word
-;; Word conflicts with +-2 row
-;;  - Linked Letter != Row Letter
-;;  - word link adj-row
+;; Word conflicts with +-1 WORD
+;; [word link adj-word]
+;;  Every Letter:
+;;    linked:  = l1 l2
+;;    nolink: != l1 l2
+;; Word conflicts with +-1 ROW
+;; [word link adj-row]
+;;  For l2 position:
+;;    linked:  = l1 l2  ;NOTE: this may signify an error!
+;;    nolink: != l1 l2
+;; Word conflicts with +-2 WORD
+;; [word link far-word]
+;;  Every Letter:
+;;    linked: != l1 l2
+;;    nolink: TRUE
+;; Word conflicts with +-2 ROW
+;; [word link far-row]
+;;  For l2 position:
+;;    linked: != l1 l2
+;;    nolink: TRUE
+;;
+;; NOTE: Every rule involves checking linked?
+;;       adj-letter & adj-word have same conditions
+;;       Same for far-letter & far-word
+;;       eg: adj-word, adj-letter, far-letter, far-word all pass linked & unlinked functions
+;;       into a main function that checks if linked and then applies the appropriate function
+;;       and returns two bools: one for if linked, and another for if passed.
+;;       then original function actually does the error reporting
 
 (defn per-letter? [word-l adj-l pos-l [l1 l2]]
   (let [linked? (or (= pos-l l1) (= pos-l l2))]
@@ -175,6 +166,7 @@
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
        (cond (= "" i)         (recur rows links words pos false)
+
              (= (first i) \!) (cond (= i "!RULES")  ()
                                     (= i "!SHOW")   (recur rows links words pos true)
                                     (= i "!CLEAR")  (recur rows links (dissoc words pos) pos true)
