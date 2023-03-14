@@ -88,7 +88,50 @@
 ;;  For l2 position:
 ;;    linked: != l1 l2
 ;;    nolink: TRUE
-;;
+
+(defn- linked? [position [link-1 link-2]]
+  (or (= position link-1) (= position link-2)))
+
+(defn- !far-word [word far-word links]
+  (when far-word
+    (loop [position 0]
+      (when (> 5 position)
+        (let [w-letter (get word position)
+              f-letter (get far-word position)]
+          (when (linked? position links)
+            (if (not= w-letter f-letter)
+              (recur (inc position))
+              (pl-do "FAR LINKED CANNOT MATCH: " w-letter f-letter true))))))))
+
+(defn- !adj-word [word adj-word links]
+  (when adj-word
+    (loop [position 0]
+      (when (> 5 position)
+        (let [w-letter (get word position)
+              a-letter (get adj-word position)]
+          (if (linked? position links)
+            (if (= w-letter a-letter)
+              (recur (inc position))
+              (pl-do "LINKED DO NOT MATCH: " w-letter a-letter true))
+            (if (not= w-letter a-letter)
+              (recur (inc position))
+              (pl-do "UNLINKED CANNOT MATCH: " w-letter a-letter true))))))))
+
+(defn- !far-row [word [position letter] links]
+  (when letter
+    (let [w-letter (get word position)]
+      (when (linked? position links)
+        (if (not= w-letter letter) false
+          (pl-do " FAR-LETTER CANNOT MATCH: " w-letter letter true))))))
+
+(defn- !adj-row [word [position letter] links]
+  (when letter
+    (let [w-letter (get word position)]
+      (if (linked? position links)
+        (pl-do "ERROR: linked row-letter!?" true)
+        (if (not= w-letter letter) false
+            (pl-do " ADJ-LETTER CANNOT MATCH: " w-letter letter true))))))
+
 ;; NOTE: Every rule involves checking linked?
 ;;       adj-letter & adj-word have same conditions
 ;;       Same for far-letter & far-word
@@ -97,42 +140,10 @@
 ;;       and returns two bools: one for if linked, and another for if passed.
 ;;       then original function actually does the error reporting
 
-(defn per-letter? [word-l adj-l pos-l [l1 l2]]
-  (let [linked? (or (= pos-l l1) (= pos-l l2))]
-    (cond (and linked? (not= word-l adj-l))     (pl-do "FIXME LINK " word-l adj-l  false)
-          (and (not linked?) (= word-l adj-l))  (pl-do "FIXME NOLINK " word-l adj-l false)
-          :else true)))
-
-(defn adj-word? [word adj-word link]
-   (if-not adj-word true
-           (loop [pos-l 0]
-             (if (>= pos-l 5) true
-                 (let [word-l  (get word pos-l)
-                       adj-l   (get adj-word pos-l)]
-                   (if-not (per-letter? word-l adj-l pos-l link)
-                     false
-                     (recur (inc pos-l))))))))
-
-(defn- adj-letter?
-  ([word [pos-l letter]]
-   (if-not letter true
-     (let [word-l (get word pos-l)]
-       (if (not= word-l letter) true
-           (pl-do "ADJ-LETTER" false)))))
-  ([word [pos-l letter] [l1 l2]]
-   (if-not letter true
-     (let [word-l (get word pos-l)]
-       (if (and (not= word-l letter)
-                (or (= l1 pos-l)
-                    (= l2 pos-l)))
-         true
-           (pl-do "FAR-LETTER" false))))))
-
-(defn- row-letter? [word rows pos-r]
-  (let [[pos-l letter] (get rows pos-r)
-        word-l        (get word pos-l)]
-    (if (= letter word-l) true
-        (pl-do (t/letter-mismatch pos-l word word-l letter) false))))
+(defn- !row-letter [word [position letter]]
+  (let [w-letter (get word position)]
+    (when (not= letter w-letter)
+      (pl-do (t/letter-mismatch position word w-letter letter) false))))
 
 (defn- right-size? [input]
   (if (= 5 (count input)) true
@@ -185,15 +196,18 @@
                                                  (recur rows links words new-pos true)
                                                  (recur rows links words pos false))
 
-             (not (right-size? i))                                                (recur rows links words pos false)
-             (not (is-word? i))                                                   (recur rows links words pos false)
-             (not (row-letter? i rows pos))                                       (recur rows links words pos false)
-             (not (adj-letter? i (get rows (inc pos))))                           (recur rows links words pos false)
-             (not (adj-letter? i (get rows (dec pos))))                           (recur rows links words pos false)
-             (not (adj-word? i (get words (inc pos)) (get links pos)))            (recur rows links words pos false)
-             (not (adj-word? i (get words (dec pos)) (get links (dec pos))))      (recur rows links words pos false)
-             (not (adj-letter? i (get rows (+ pos 2)) (get links pos)))           (recur rows links words pos false)
-             (not (adj-letter? i (get rows (- pos 2)) (get links (dec pos))))     (recur rows links words pos false)
+             (not (right-size? i))                                             (recur rows links words pos false)
+             (not (is-word? i))                                                (recur rows links words pos false)
+             (!row-letter i (get rows pos))                              (recur rows links words pos false)
+             (!adj-row    i (get rows (inc pos))  (get links pos))       (recur rows links words pos false)
+             (!adj-row    i (get rows (dec pos))  (get links (dec pos))) (recur rows links words pos false)
+             (!adj-word   i (get words (inc pos)) (get links pos))       (recur rows links words pos false)
+             (!adj-word   i (get words (dec pos)) (get links (dec pos))) (recur rows links words pos false)
+             (!far-row    i (get rows (+ pos 2))  (get links pos))       (recur rows links words pos false)
+             (!far-row    i (get rows (- pos 2))  (get links (dec pos))) (recur rows links words pos false)
+             (!far-word   i (get words (+ pos 2)) (get links pos))       (recur rows links words pos false)
+             (!far-word   i (get words (- pos 2)) (get links (dec pos))) (recur rows links words pos false)
+
              ;BUG: HACK: TODO: These check for row+-2, but check for linked matches
              ;                 and unlinked nonmatches! We can't check unlinked nonmatches
              ;; (not (adj-word? i (get words (+ pos 2)) (get links pos) false))       (recur rows links words pos false)
@@ -205,7 +219,6 @@
                            (pl "You Win!")
                            :quit)
                        (recur rows links new-words (next-pos pos rows new-words) true))))))))
-
 
 
 (def bug [[1 \L] [2 3] [4 \T] [0 1] [2 \E] [3 4] [0 \B]])

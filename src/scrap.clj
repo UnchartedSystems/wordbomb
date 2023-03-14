@@ -48,3 +48,36 @@
 ;;                                (do (represent rows links new-words pos)
 ;;                                    (pl "YOU WIN")
 ;;                                    (identity :quit))))))))))))
+
+
+
+;; (defn per-letter? [word-l adj-l pos-l [l1 l2]]
+;;   (let [linked? (or (= pos-l l1) (= pos-l l2))]
+;;     (cond (and linked? (not= word-l adj-l))     (pl-do "FIXME LINK " word-l adj-l  false)
+;;           (and (not linked?) (= word-l adj-l))  (pl-do "FIXME NOLINK " word-l adj-l false)
+;;           :else true)))
+
+;; (defn adj-word? [word adj-word link]
+;;    (if-not adj-word true
+;;            (loop [pos-l 0]
+;;              (if (>= pos-l 5) true
+;;                  (let [word-l  (get word pos-l)
+;;                        adj-l   (get adj-word pos-l)]
+;;                    (if-not (per-letter? word-l adj-l pos-l link)
+;;                      false
+;;                      (recur (inc pos-l))))))))
+
+;; (defn- adj-letter?
+;;   ([word [pos-l letter]]
+;;    (if-not letter true
+;;      (let [word-l (get word pos-l)]
+;;        (if (not= word-l letter) true
+;;            (pl-do "ADJ-LETTER" false)))))
+;;   ([word [pos-l letter] [l1 l2]]
+;;    (if-not letter true
+;;      (let [word-l (get word pos-l)]
+;;        (if (and (not= word-l letter)
+;;                 (or (= l1 pos-l)
+;;                     (= l2 pos-l)))
+;;          true
+;;            (pl-do "FAR-LETTER" false))))))
