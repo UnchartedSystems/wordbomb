@@ -1,4 +1,2 @@
 (ns main
-  (:require [clojure.string :as string]))
-
-
+  (:require [player2 :as p]))

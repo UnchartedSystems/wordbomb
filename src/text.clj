@@ -63,9 +63,9 @@
 ;; Game Initialization
 
 (def letterknot (str "\n"
-                     "----------" "\n"
-                     (c/white "Letterknot") "\n"
-                     "----------" "\n"))
+                     "------------" "\n"
+                    "|"(c/bold "Letterknot") "|" "\n"
+                     "------------" "\n"))
 
 (def difficulty (str "New game! Choose difficulty:"   "\n"
                      "Easy / Medium / Hard / Custom"  "\n"

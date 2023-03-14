@@ -41,6 +41,18 @@
        "!quit"  "- abandon the puzzle & quit Letterknot"
        ))))
 
+
+
+; TODO: FIXME: CHANT hasn't been added as a word yet, but all letters are implied
+;       TODO: solution! make implied letters light grey!
+ ;;    P L A N E
+ ;;        | |
+ ;; >> C H A N T
+ ;;    | |
+ ;;    C H E E R
+ ;;          | |
+ ;;    B _ _ E R
+
 (defn- row->str [rows links words i pos]
   (apply str (if (= i pos) " >> " "    ")
          (interpose " "
@@ -50,7 +62,7 @@
                    (cond
                      (= (nth (get rows i) 0) n) (nth (get rows i) 1)
                      (and (some #(= n %) (get links (dec i))) (get (get words (dec i)) n)) (get (get words (dec i)) n)
-                     (and (some #(= n %) (get links i)) (get (get words i) n)) (get (get words (dec i)) n)
+                     (and (some #(= n %) (get links i)) (get (get words (inc i)) n)) (get (get words (inc i)) n)
                      :else "_")) '(0 1 2 3 4))))))
 
 
@@ -58,6 +70,18 @@
   (apply str "    "
          (interpose
           " " (mapv (fn [n] (if (some #(= n %) (get links i)) "|" " ")) '(0 1 2 3 4)))))
+
+;; TODO: refactor represent
+;; fix bug: represent above & below
+;; represent errors inline!
+ ;; FIXME: representation AND link checker fail!
+ ;;    C L A I M
+ ;;        | |
+ ;;    _ _ A I T
+ ;;    | |
+ ;; >> C H E E R
+ ;;          | |
+ ;;    B _ _ E R
 
 (defn- represent [rows links words pos]
   (let [[row-str & row-strs]   (mapv #(row->str rows links words % pos) (range (count rows)))
@@ -131,6 +155,38 @@
         (pl-do "ERROR: linked row-letter!?" true)
         (if (not= w-letter letter) false
             (pl-do " ADJ-LETTER CANNOT MATCH: " w-letter letter true))))))
+=
+;TODO these can be abstracted better
+(defn- !adj-rows [word rows links pos]
+  (or (!adj-row word (get rows (inc pos))  (get links pos))
+      (!adj-row word (get rows (dec pos))  (get links (dec pos)))))
+
+(defn- !adj-words [word words links pos]
+  (or (!adj-word word (get words (inc pos)) (get links pos))
+      (!adj-word word (get words (dec pos)) (get links (dec pos)))))
+
+(defn- !far-rows [word rows links pos]
+  (or (!far-row word (get rows (+ pos 2)) (get links (inc pos)))
+      (!far-row word (get rows (+ pos 2)) (get links pos))
+      (!far-row word (get rows (- pos 2)) (get links (dec pos)))
+      (!far-row word (get rows (- pos 2)) (get links (- pos 2)))))
+
+(defn- !far-words [word words links pos]
+  (or (!far-word word (get words (+ pos 2)) (get links (inc pos)))
+      (!far-word word (get words (+ pos 2)) (get links pos))
+      (!far-word word (get words (- pos 2)) (get links (dec pos)))
+      (!far-word word (get words (- pos 2)) (get links (- pos 2)))))
+
+ ;; FIXME: representation AND link checker fail!
+ ;; NOTE: reason for link: !far-word not checking both
+ ;        sets of links between 1 & 2
+ ;;    C L A I M
+ ;;        | |
+ ;;    _ _ A I T
+ ;;    | |
+ ;; >> C H E E R
+ ;;          | |
+ ;;    B _ _ E R
 
 ;; NOTE: Every rule involves checking linked?
 ;;       adj-letter & adj-word have same conditions
@@ -196,22 +252,14 @@
                                                  (recur rows links words new-pos true)
                                                  (recur rows links words pos false))
 
-             (not (right-size? i))                                             (recur rows links words pos false)
-             (not (is-word? i))                                                (recur rows links words pos false)
-             (!row-letter i (get rows pos))                              (recur rows links words pos false)
-             (!adj-row    i (get rows (inc pos))  (get links pos))       (recur rows links words pos false)
-             (!adj-row    i (get rows (dec pos))  (get links (dec pos))) (recur rows links words pos false)
-             (!adj-word   i (get words (inc pos)) (get links pos))       (recur rows links words pos false)
-             (!adj-word   i (get words (dec pos)) (get links (dec pos))) (recur rows links words pos false)
-             (!far-row    i (get rows (+ pos 2))  (get links pos))       (recur rows links words pos false)
-             (!far-row    i (get rows (- pos 2))  (get links (dec pos))) (recur rows links words pos false)
-             (!far-word   i (get words (+ pos 2)) (get links pos))       (recur rows links words pos false)
-             (!far-word   i (get words (- pos 2)) (get links (dec pos))) (recur rows links words pos false)
+             (not (right-size? i))            (recur rows links words pos false)
+             (not (is-word? i))               (recur rows links words pos false)
+             (!row-letter i (get rows pos))   (recur rows links words pos false)
+             (!adj-rows   i rows links pos)   (recur rows links words pos false)
+             (!adj-words  i words links pos)  (recur rows links words pos false)
+             (!far-rows   i rows links pos)   (recur rows links words pos false)
+             (!far-words  i words links pos)  (recur rows links words pos false)
 
-             ;BUG: HACK: TODO: These check for row+-2, but check for linked matches
-             ;                 and unlinked nonmatches! We can't check unlinked nonmatches
-             ;; (not (adj-word? i (get words (+ pos 2)) (get links pos) false))       (recur rows links words pos false)
-             ;; (not (adj-word? i (get words (- pos 2)) (get links (dec pos)) false)) (recur rows links words pos false)
              :else (let [new-words (assoc words pos i)
                          won? (= (count new-words) (count rows))]
                      (if won?
@@ -225,11 +273,12 @@
 
 (defn game
   ([]
-   (pl t/letterknot)
-   (game true))
+   (pl t/letterknot))
 
   ([_]
    (pl t/difficulty)
+   (doall (pr " >>")
+   (flush))
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
        (cond (= i "1") (game 4 15 t/easy)
@@ -262,5 +311,6 @@
            (= ng? :quit)     (pl t/goodbye)
            :else             (pl t/goodbye)))))
 
-
-(game)
+(let [console (. System console)
+     pwd (.readPassword console "tell me your password: ")]
+   (println "your password is " pwd))
