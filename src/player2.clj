@@ -23,6 +23,10 @@
   `(do (println (str ~@(drop-last args)))
        ~(last args)))
 
+(defn or= [val & matches]
+  (if (some #(= val %) matches)
+    true false))
+
 (defn- !help []
   (pl "PICK ROW USING NUM TEXT")
   (pl "NOTE: you can also use shorthands like !c !")
@@ -88,7 +92,8 @@
         link-strs  (mapv #(link->str links %) (range (count links)))]
     (pl "\n")
     (pl row-str)
-    (mapv pl (interleave link-strs row-strs))))
+    (mapv pl (interleave link-strs row-strs))
+    (pl "\n")))
 
 
 ;; TODO: check for:
@@ -146,7 +151,7 @@
     (let [w-letter (get word position)]
       (when (linked? position links)
         (if (not= w-letter letter) false
-          (pl-do " FAR-LETTER CANNOT MATCH: " w-letter letter true))))))
+          (pl-do "FAR-LETTER CANNOT MATCH: " w-letter letter true))))))
 
 (defn- !adj-row [word [position letter] links]
   (when letter
@@ -230,21 +235,22 @@
    (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
   ([rows links words pos show?]
    (when show? (represent rows links words pos))
+   (t/input)
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
        (cond (= "" i)         (recur rows links words pos false)
 
-             (= (first i) \!) (cond (= i "!RULES")  ()
-                                    (= i "!SHOW")   (recur rows links words pos true)
-                                    (= i "!CLEAR")  (recur rows links (dissoc words pos) pos true)
-                                    (= i "!RESET")  (recur rows links (i/int-map) pos true)
-                                    (= i "!UNDO")   ()
-                                    (= i "!HELP")   (do (!help) (recur rows links words pos true))
-                                    (= i "!INFO")   ()
-                                    (= i "!HINT")   ()
-                                    (= i "!SOLVE")  ()
-                                    (= i "!NEW")    :new-game
-                                    (= i "!QUIT")   ()
+             (= (first i) \!) (cond (or= i "!RULES")  ()
+                                    (or= i "!SHOW" "!S")   (recur rows links words pos true)
+                                    (or= i "!CLEAR" "!C")  (recur rows links (dissoc words pos) pos true)
+                                    (or= i "!RESET" "!R")  (recur rows links (i/int-map) pos true)
+                                    (or= i "!UNDO" "!U")   ()
+                                    (or= i "!HELP")   (do (!help) (recur rows links words pos true))
+                                    (or= i "!INFO")   ()
+                                    (or= i "!HINT" "!H")   ()
+                                    (or= i "!SOLVE")  ()
+                                    (or= i "!NEW" "!N")    :new-game
+                                    (or= i "!QUIT" "!Q")   ()
                                     :else           (pl-do (t/bad-command i)
                                                            (recur rows links words pos false)))
 
@@ -273,12 +279,12 @@
 
 (defn game
   ([]
-   (pl t/letterknot))
+   (pl t/letterknot)
+   (game true))
 
   ([_]
    (pl t/difficulty)
-   (doall (pr " >>")
-   (flush))
+   (t/input)
    (when-let [raw-input (read-line)]
      (let [i (str/upper-case raw-input)]
        (cond (= i "1") (game 4 15 t/easy)
@@ -301,7 +307,7 @@
          t (str (int (/ (- t-after t-before) 1000000.0)))
          gen-message  (t/generated n-gens t)]
      (pl-do gen-message
-            (game bug t/post-gen))))
+            (game puzzle t/post-gen))))
 
   ([puzzle message]
    (pl message)
@@ -311,6 +317,4 @@
            (= ng? :quit)     (pl t/goodbye)
            :else             (pl t/goodbye)))))
 
-(let [console (. System console)
-     pwd (.readPassword console "tell me your password: ")]
-   (println "your password is " pwd))
+(game)

@@ -7,6 +7,10 @@
 
 ;; General
 
+(defn input []
+  (doall (print " >> ")
+         (flush)))
+
 (defn error-if-seen [func]
   (str "Error on handling '" func "' return"))
 
