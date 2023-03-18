@@ -5,6 +5,29 @@
             [clojure.data.int-map :as i]
             [clojure.term.colors  :as c]))
 
+(def noop-writer
+  ;; *out* needs to be bound to a java.io.writer, so proxy a writer
+  ;; https://docs.oracle.com/javase/7/docs/api/java/io/Writer.html
+  (proxy [java.io.Writer] []
+    (close [] nil)
+    (flush [] nil)
+    (write
+      ;; ... which politely ignores any calls.
+      ([cbuf] nil)
+      ([cbuf off len] nil))))
+
+(defn test-noop []
+  (println "Hello!")
+  (print "What is your name? ")
+  (flush)
+  (read-line)
+  (binding [*out* noop-writer]
+  (println "HELLO!")
+  (print "WHAT NAME? ")
+  (flush)
+  (read-line))
+  (println "Finished!"))
+
 ;; General
 
 (defn input []

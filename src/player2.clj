@@ -57,6 +57,25 @@
  ;;          | |
  ;;    B _ _ E R
 
+;; TODO: FIXME: letter checking on motes doesn't catch A != O??
+;; malls
+;;  ADJ-LETTER CANNOT MATCH: AA
+;;     D E T E R
+;;         | |
+;;  >> M O T E S
+;;     |       |
+;;     M _ L _ S
+;;       |   |
+;;     R _ _ _ _
+;; !clear
+;;     D E T E R
+;;         | |
+;;  >> _ A T E _
+;;     |       |
+;;     _ _ L _ _
+;;       |   |
+;;     R _ _ _ _
+
 (defn- row->str [rows links words i pos]
   (apply str (if (= i pos) " >> " "    ")
          (interpose " "
@@ -182,6 +201,11 @@
       (!far-word word (get words (- pos 2)) (get links (dec pos)))
       (!far-word word (get words (- pos 2)) (get links (- pos 2)))))
 
+(defn- !row-letter [word [position letter]]
+  (let [w-letter (get word position)]
+    (when (not= letter w-letter)
+      (pl-do (t/letter-mismatch position word w-letter letter) true))))
+
  ;; FIXME: representation AND link checker fail!
  ;; NOTE: reason for link: !far-word not checking both
  ;        sets of links between 1 & 2
@@ -201,10 +225,6 @@
 ;;       and returns two bools: one for if linked, and another for if passed.
 ;;       then original function actually does the error reporting
 
-(defn- !row-letter [word [position letter]]
-  (let [w-letter (get word position)]
-    (when (not= letter w-letter)
-      (pl-do (t/letter-mismatch position word w-letter letter) false))))
 
 (defn- right-size? [input]
   (if (= 5 (count input)) true
@@ -229,6 +249,8 @@
     (if (and (<= num (count rows)) (> num 0))
       (dec num)
       (pl-do (t/bad-row-# num (count rows)) false))))
+
+(def ? #(do (println %) %))
 
 (defn- game-loop
   ([[rows links]]
@@ -317,4 +339,4 @@
            (= ng? :quit)     (pl t/goodbye)
            :else             (pl t/goodbye)))))
 
-(game)
+#_(game)
