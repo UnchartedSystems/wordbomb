@@ -57,25 +57,6 @@
  ;;          | |
  ;;    B _ _ E R
 
-;; TODO: FIXME: letter checking on motes doesn't catch A != O??
-;; malls
-;;  ADJ-LETTER CANNOT MATCH: AA
-;;     D E T E R
-;;         | |
-;;  >> M O T E S
-;;     |       |
-;;     M _ L _ S
-;;       |   |
-;;     R _ _ _ _
-;; !clear
-;;     D E T E R
-;;         | |
-;;  >> _ A T E _
-;;     |       |
-;;     _ _ L _ _
-;;       |   |
-;;     R _ _ _ _
-
 (defn- row->str [rows links words i pos]
   (apply str (if (= i pos) " >> " "    ")
          (interpose " "
@@ -93,18 +74,6 @@
   (apply str "    "
          (interpose
           " " (mapv (fn [n] (if (some #(= n %) (get links i)) "|" " ")) '(0 1 2 3 4)))))
-
-;; TODO: refactor represent
-;; fix bug: represent above & below
-;; represent errors inline!
- ;; FIXME: representation AND link checker fail!
- ;;    C L A I M
- ;;        | |
- ;;    _ _ A I T
- ;;    | |
- ;; >> C H E E R
- ;;          | |
- ;;    B _ _ E R
 
 (defn- represent [rows links words pos]
   (let [[row-str & row-strs]   (mapv #(row->str rows links words % pos) (range (count rows)))
@@ -250,11 +219,14 @@
       (dec num)
       (pl-do (t/bad-row-# num (count rows)) false))))
 
-(def ? #(do (println %) %))
+
+(def current-puzzle (atom nil))
 
 (defn- game-loop
-  ([[rows links]]
-   (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true))
+  ([puzzle]
+   (let [[rows links] (u/split-puzzle puzzle)]
+     (reset! current-puzzle puzzle)
+     (game-loop (u/vecs->intmap rows) (u/vecs->intmap links) (i/int-map) 0 true)))
   ([rows links words pos show?]
    (when show? (represent rows links words pos))
    (t/input)
@@ -262,17 +234,17 @@
      (let [i (str/upper-case raw-input)]
        (cond (= "" i)         (recur rows links words pos false)
 
-             (= (first i) \!) (cond (or= i "!RULES")  ()
+             (= (first i) \!) (cond (or= i "!RULES")  (pl-do t/rules (recur rows links words pos false))
                                     (or= i "!SHOW" "!S")   (recur rows links words pos true)
                                     (or= i "!CLEAR" "!C")  (recur rows links (dissoc words pos) pos true)
                                     (or= i "!RESET" "!R")  (recur rows links (i/int-map) pos true)
-                                    (or= i "!UNDO" "!U")   ()
+                                    ;; (or= i "!UNDO" "!U")   ()
                                     (or= i "!HELP")   (do (!help) (recur rows links words pos true))
-                                    (or= i "!INFO")   ()
-                                    (or= i "!HINT" "!H")   ()
-                                    (or= i "!SOLVE")  ()
+                                    (or= i "!INFO")   (pl-do (t/puzzle-info @current-puzzle) (recur rows links words pos false))
+                                    ;; (or= i "!HINT" "!H")   ()
+                                    ;; (or= i "!SOLVE")  ()
                                     (or= i "!NEW" "!N")    :new-game
-                                    (or= i "!QUIT" "!Q")   ()
+                                    (or= i "!QUIT" "!Q")   :quit
                                     :else           (pl-do (t/bad-command i)
                                                            (recur rows links words pos false)))
 
@@ -333,7 +305,7 @@
 
   ([puzzle message]
    (pl message)
-   (let [ng? (game-loop (u/split-puzzle puzzle))]
+   (let [ng? (game-loop puzzle)]
      (cond (= ng? :restart)  (recur puzzle "Restarting!")
            (= ng? :new-game) (game true)
            (= ng? :quit)     (pl t/goodbye)

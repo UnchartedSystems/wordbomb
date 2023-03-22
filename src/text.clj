@@ -2,6 +2,7 @@
   (:require [generator3 :as g3]
             [clojure.string :as str]
             [utilities :as u]
+            [solver4 :as s4]
             [clojure.data.int-map :as i]
             [clojure.term.colors  :as c]))
 
@@ -27,6 +28,8 @@
   (flush)
   (read-line))
   (println "Finished!"))
+
+
 
 ;; General
 
@@ -81,6 +84,12 @@
 (defn bad-command [c]
   (str "Command: " c " not recognized." "\n"
        "Use !help to see all available commands"))
+
+(def rules (str "Not ready yet!"))
+
+(defn puzzle-info [puzzle]
+  (str "There are " (count (s4/solutions puzzle u/core-words)) " simple solutions. \n"
+       "There are " (count (s4/solutions puzzle u/all-words)) " total solutions. \n"))
 
 ; row switching
 (defn bad-row-# [n rows-#]
