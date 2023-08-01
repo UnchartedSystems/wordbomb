@@ -16,7 +16,7 @@
 ;; NOTE: IDEA! Game should joke about the number of cores you have!
 ;;        - If you have > ~>=16 threads: 'n threads! THE POWER! :stronglenni'
 ;;        - If you have < ~<=8  threads: 'maybe this would be faster if your cpu had more than n threads :shrugemoji'
-(def n-cpu (.availableProcessors (Runtime/getRuntime)))
+(def n-cpu (+ 2 (.availableProcessors (Runtime/getRuntime))))
 
 (defn- split-pairs [coll]
   (loop [i coll, o []] (if (empty? i) o (recur (subvec i 2) (conj o (subvec i 0 2))))))
