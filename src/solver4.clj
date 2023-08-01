@@ -1,5 +1,7 @@
 (ns solver4)
 
+; HACK: The use of an atom to accumulate solutions is an escape hatch with performance implications!
+
 (defn- get-rowsets [rows wordset]
   (mapv (fn [[i l]] (filterv #(= (get % i) l) wordset)) rows))
 
